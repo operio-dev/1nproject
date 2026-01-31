@@ -145,7 +145,10 @@ export default function Home() {
   const t = translations[lang];
 
   useEffect(() => {
-    if (memberNumber) return;
+    if (memberNumber) {
+        setCount(CURRENT_MEMBERS);
+        return;
+    };
     const duration = 2000;
     const start = Math.max(0, CURRENT_MEMBERS - 100);
     const end = CURRENT_MEMBERS;
@@ -220,7 +223,7 @@ export default function Home() {
           </button>
         </header>
         <main className="flex-1 flex flex-col pt-16 overflow-hidden relative">
-          {activeTab === 'home' && <DashboardHome memberNumber={memberNumber} elapsedTime={elapsedTime} totalMembers={count} lang={lang} />}
+          {activeTab === 'home' && <DashboardHome memberNumber={memberNumber} elapsedTime={elapsedTime} totalMembers={CURRENT_MEMBERS} lang={lang} />}
           {activeTab === 'community' && <CommunityTab lang={lang} />}
           {activeTab === 'profile' && <ProfileTab onLogout={handleLogout} lang={lang} />}
         </main>
