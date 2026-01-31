@@ -3,9 +3,11 @@
 
 import React, { useState, useEffect, useRef, memo } from 'react';
 import { Lock, User, Users, ArrowUpRight, LogOut, CreditCard, Flame, Star, Home as HomeIcon, UserCircle, Send } from 'lucide-react';
-import { TOTAL_SLOTS, CURRENT_MEMBERS, MOCK_STATEMENTS, PRICE_MONTHLY } from '@/lib/constants';
-import { CountdownTime } from '@/lib/types';
+import { TOTAL_SLOTS, CURRENT_MEMBERS } from '@/lib/constants';
+import { CountdownTime, MemberStatement } from '@/lib/types';
 import { translations } from '@/lib/translations';
+import { MOCK_STATEMENTS } from '@/lib/constants';
+
 
 const MOCK_JOIN_DATE = new Date(Date.now() - (18 * 24 * 60 * 60 * 1000 + 12 * 60 * 60 * 1000 + 15 * 60 * 1000)).getTime();
 
@@ -135,7 +137,7 @@ const ProfileTab = memo(({ onLogout, lang }: { onLogout: () => void, lang: 'it' 
 
 export default function Home() {
   const [lang, setLang] = useState<'it' | 'en'>('it');
-  const [count, setCount] = useState(CURRENT_MEMBERS);
+  const [count, setCount] = useState(0);
   const [timeLeft, setTimeLeft] = useState<CountdownTime>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [elapsedTime, setElapsedTime] = useState<CountdownTime>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [memberNumber, setMemberNumber] = useState<number | null>(null);
@@ -150,13 +152,14 @@ export default function Home() {
         return;
     };
     const duration = 2000;
-    const start = Math.max(0, CURRENT_MEMBERS - 100);
+    const start = 0;
     const end = CURRENT_MEMBERS;
     let startTime: number | null = null;
     const animate = (currentTime: number) => {
       if (!startTime) startTime = currentTime;
       const progress = Math.min((currentTime - startTime) / duration, 1);
-      setCount(Math.floor(progress * (end - start) + start));
+      const easeOutProgress = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(easeOutProgress * (end - start) + start));
       if (progress < 1) requestAnimationFrame(animate);
     };
     requestAnimationFrame(animate);
