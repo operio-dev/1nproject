@@ -3,11 +3,9 @@
 
 import React, { useState, useEffect, useRef, memo } from 'react';
 import { Lock, User, Users, ArrowUpRight, LogOut, CreditCard, Flame, Star, Home as HomeIcon, UserCircle, Send } from 'lucide-react';
-import { TOTAL_SLOTS, CURRENT_MEMBERS } from '@/lib/constants';
-import { CountdownTime, MemberStatement } from '@/lib/types';
+import { TOTAL_SLOTS, CURRENT_MEMBERS, MOCK_STATEMENTS } from '@/lib/constants';
+import { CountdownTime } from '@/lib/types';
 import { translations } from '@/lib/translations';
-import { MOCK_STATEMENTS } from '@/lib/constants';
-
 
 const MOCK_JOIN_DATE = new Date(Date.now() - (18 * 24 * 60 * 60 * 1000 + 12 * 60 * 60 * 1000 + 15 * 60 * 1000)).getTime();
 
@@ -15,9 +13,8 @@ const DashboardHome = memo(({ memberNumber, elapsedTime, totalMembers, lang }: {
   const t = translations[lang];
   const memberProgress = (totalMembers / TOTAL_SLOTS) * 100;
 
-  // Logica Livelli basata su cicli di 30 giorni
   const totalElapsedDays = elapsedTime.days;
-  const cycleDuration = 30; // Ogni livello dura 30 giorni
+  const cycleDuration = 30;
 
   let currentLevelIndex = Math.floor(totalElapsedDays / cycleDuration);
   
