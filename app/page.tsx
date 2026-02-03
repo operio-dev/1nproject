@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef, memo } from 'react';
@@ -6,6 +5,8 @@ import { Lock, User, Users, ArrowUpRight, LogOut, CreditCard, Flame, Star, Home 
 import { TOTAL_SLOTS, CURRENT_MEMBERS, MOCK_STATEMENTS } from '@/lib/constants';
 import { CountdownTime } from '@/lib/types';
 import { translations } from '@/lib/translations';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 
 const MOCK_JOIN_DATE = new Date(Date.now() - (18 * 24 * 60 * 60 * 1000 + 12 * 60 * 60 * 1000 + 15 * 60 * 1000)).getTime();
 
@@ -140,8 +141,37 @@ export default function Home() {
   const [memberNumber, setMemberNumber] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'home' | 'community' | 'profile'>('home');
   const [isAnimating, setIsAnimating] = useState(false);
+  const [loading, setLoading] = useState(true);
 
+  const router = useRouter();
+  const supabase = createClient();
   const t = translations[lang];
+
+  useEffect(() => {
+    checkMembership();
+  }, []);
+
+  const checkMembership = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data: member } = await supabase
+          .from('members')
+          .select('member_number')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (member) {
+          setMemberNumber(member.member_number);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking membership:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (memberNumber) {
@@ -195,23 +225,29 @@ export default function Home() {
   }, []);
 
   const handleLogin = () => {
-    setIsAnimating(true);
-    setTimeout(() => {
-      setMemberNumber(1);
-      setIsAnimating(false);
-    }, 600);
+    router.push('/login');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsAnimating(true);
+    await supabase.auth.signOut();
     setTimeout(() => {
       setMemberNumber(null);
       setActiveTab('home');
       setIsAnimating(false);
+      router.refresh();
     }, 400);
   };
 
   const progressPercentage = (CURRENT_MEMBERS / TOTAL_SLOTS) * 100;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-2xl font-black tracking-tighter text-white">1N</div>
+      </div>
+    );
+  }
 
   if (memberNumber) {
     return (
