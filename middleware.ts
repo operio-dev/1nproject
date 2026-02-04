@@ -56,23 +56,26 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Protected routes
-  if (request.nextUrl.pathname.startsWith('/select-number') && !user) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  // Redirect to select-number if logged in but not a member yet
-  if (user && request.nextUrl.pathname === '/') {
+  // Protected route: /select-number requires authentication
+  if (request.nextUrl.pathname.startsWith('/select-number')) {
+    if (!user) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+    
+    // If user already has a member number, redirect to home (dashboard)
     const { data: member } = await supabase
       .from('members')
       .select('member_number')
       .eq('user_id', user.id)
-      .single()
+      .maybeSingle()
 
-    if (!member) {
-      return NextResponse.redirect(new URL('/select-number', request.url))
+    if (member) {
+      return NextResponse.redirect(new URL('/', request.url))
     }
   }
+
+  // If logged in user visits root, stay on root (they see dashboard if member, landing if not)
+  // No automatic redirects to /select-number
 
   return response
 }
