@@ -2,13 +2,11 @@
 
 import React, { useState, useEffect, useRef, memo } from 'react';
 import { Lock, User, Users, ArrowUpRight, LogOut, CreditCard, Flame, Star, Home as HomeIcon, UserCircle, Send } from 'lucide-react';
-import { TOTAL_SLOTS, CURRENT_MEMBERS, MOCK_STATEMENTS } from '@/lib/constants';
+import { TOTAL_SLOTS, MOCK_STATEMENTS } from '@/lib/constants';
 import { CountdownTime } from '@/lib/types';
 import { translations } from '@/lib/translations';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-
-const MOCK_JOIN_DATE = new Date(Date.now() - (18 * 24 * 60 * 60 * 1000 + 12 * 60 * 60 * 1000 + 15 * 60 * 1000)).getTime();
 
 const DashboardHome = memo(({ memberNumber, elapsedTime, totalMembers, lang }: { memberNumber: number | null, elapsedTime: CountdownTime, totalMembers: number, lang: 'it' | 'en' }) => {
   const t = translations[lang];
@@ -116,17 +114,29 @@ const CommunityTab = memo(({ lang }: { lang: 'it' | 'en' }) => {
   );
 });
 
-const ProfileTab = memo(({ onLogout, lang }: { onLogout: () => void, lang: 'it' | 'en' }) => {
+const ProfileTab = memo(({ onLogout, userEmail, onManageSubscription, lang }: { onLogout: () => void, userEmail: string, onManageSubscription: () => void, lang: 'it' | 'en' }) => {
   const t = translations[lang];
   return (
     <div className="flex-1 flex flex-col justify-center items-center w-full max-w-xs mx-auto space-y-12 animate-in fade-in zoom-in duration-500 px-6 h-full text-white">
       <div className="text-center space-y-2">
         <h3 className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-black">{t.profile_id}</h3>
-        <p className="text-zinc-200 font-mono text-sm tracking-tighter">membro_000001@1n.null</p>
+        <p className="text-zinc-200 font-mono text-sm tracking-tighter break-all px-4">{userEmail}</p>
       </div>
       <div className="space-y-4 w-full">
-        <button className="w-full py-5 bg-white text-black text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl"><CreditCard size={16} /><span>{t.profile_manage}</span></button>
-        <button onClick={onLogout} className="w-full py-5 border border-zinc-900 text-zinc-600 text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3"><LogOut size={16} /><span>{t.profile_leave}</span></button>
+        <button 
+          onClick={onManageSubscription}
+          className="w-full py-5 bg-white text-black text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl hover:bg-zinc-200 transition-colors"
+        >
+          <CreditCard size={16} />
+          <span>{t.profile_manage}</span>
+        </button>
+        <button 
+          onClick={onLogout} 
+          className="w-full py-5 border border-zinc-900 text-zinc-600 text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:border-zinc-700 hover:text-zinc-400 transition-colors"
+        >
+          <LogOut size={16} />
+          <span>{t.profile_leave}</span>
+        </button>
       </div>
       <div className="text-[9px] text-zinc-800 font-mono text-center uppercase tracking-[0.4em] pt-10">{t.profile_node}</div>
     </div>
@@ -139,6 +149,9 @@ export default function Home() {
   const [timeLeft, setTimeLeft] = useState<CountdownTime>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [elapsedTime, setElapsedTime] = useState<CountdownTime>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [memberNumber, setMemberNumber] = useState<number | null>(null);
+  const [memberJoinDate, setMemberJoinDate] = useState<number | null>(null);
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [totalMembers, setTotalMembers] = useState(0);
   const [activeTab, setActiveTab] = useState<'home' | 'community' | 'profile'>('home');
   const [isAnimating, setIsAnimating] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -149,6 +162,7 @@ export default function Home() {
 
   useEffect(() => {
     checkMembership();
+    fetchTotalMembers();
   }, []);
 
   const checkMembership = async () => {
@@ -156,14 +170,17 @@ export default function Home() {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
+        setUserEmail(user.email || '');
+        
         const { data: member } = await supabase
           .from('members')
-          .select('member_number')
+          .select('member_number, join_date')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
         
         if (member) {
           setMemberNumber(member.member_number);
+          setMemberJoinDate(new Date(member.join_date).getTime());
         }
       }
     } catch (error) {
@@ -173,14 +190,27 @@ export default function Home() {
     }
   };
 
+  const fetchTotalMembers = async () => {
+    try {
+      const { count } = await supabase
+        .from('members')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active');
+      
+      setTotalMembers(count || 0);
+    } catch (error) {
+      console.error('Error fetching total members:', error);
+    }
+  };
+
   useEffect(() => {
     if (memberNumber) {
-        setCount(CURRENT_MEMBERS);
+        setCount(totalMembers);
         return;
     };
     const duration = 2000;
     const start = 0;
-    const end = CURRENT_MEMBERS;
+    const end = totalMembers;
     let startTime: number | null = null;
     const animate = (currentTime: number) => {
       if (!startTime) startTime = currentTime;
@@ -190,7 +220,7 @@ export default function Home() {
       if (progress < 1) requestAnimationFrame(animate);
     };
     requestAnimationFrame(animate);
-  }, [memberNumber]);
+  }, [memberNumber, totalMembers]);
 
   useEffect(() => {
     const updateTimers = () => {
@@ -209,23 +239,34 @@ export default function Home() {
         });
       }
 
-      const differenceElapsed = now - MOCK_JOIN_DATE;
-      if (differenceElapsed > 0) {
-        setElapsedTime({
-          days: Math.floor(differenceElapsed / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((differenceElapsed / (1000 * 60 * 60)) % 24),
-          minutes: Math.floor((differenceElapsed / 1000 / 60) % 60),
-          seconds: Math.floor((differenceElapsed / 1000) % 60),
-        });
+      if (memberJoinDate) {
+        const differenceElapsed = now - memberJoinDate;
+        if (differenceElapsed > 0) {
+          setElapsedTime({
+            days: Math.floor(differenceElapsed / (1000 * 60 * 60 * 24)),
+            hours: Math.floor((differenceElapsed / (1000 * 60 * 60)) % 24),
+            minutes: Math.floor((differenceElapsed / 1000 / 60) % 60),
+            seconds: Math.floor((differenceElapsed / 1000) % 60),
+          });
+        }
       }
     };
     const timer = setInterval(updateTimers, 1000);
     updateTimers();
     return () => clearInterval(timer);
-  }, []);
+  }, [memberJoinDate]);
 
   const handleLogin = () => {
     router.push('/login');
+  };
+
+  const handleJoinNow = () => {
+    router.push('/select-number');
+  };
+
+  const handleManageSubscription = () => {
+    // TODO: Implement Stripe Customer Portal
+    alert('Gestione abbonamento - Coming soon!\n\nQuesto aprirà il portale Stripe per gestire il tuo abbonamento.');
   };
 
   const handleLogout = async () => {
@@ -233,13 +274,15 @@ export default function Home() {
     await supabase.auth.signOut();
     setTimeout(() => {
       setMemberNumber(null);
+      setMemberJoinDate(null);
+      setUserEmail('');
       setActiveTab('home');
       setIsAnimating(false);
       router.refresh();
     }, 400);
   };
 
-  const progressPercentage = (CURRENT_MEMBERS / TOTAL_SLOTS) * 100;
+  const progressPercentage = (totalMembers / TOTAL_SLOTS) * 100;
 
   if (loading) {
     return (
@@ -252,16 +295,16 @@ export default function Home() {
   if (memberNumber) {
     return (
       <div className={`h-[100dvh] bg-black text-white relative flex flex-col overflow-hidden transition-opacity duration-500 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
-        <header className="fixed top-0 left-0 w-full px-8 py-6 z-[60] flex justify-between items-center">
+        <header className="fixed top-0 left-0 w-full px-8 py-6 z-[60] flex justify-between items-center bg-gradient-to-b from-black to-transparent">
           <div className="text-2xl font-black tracking-tighter text-white cursor-pointer select-none">1N</div>
           <button onClick={() => setLang(l => l === 'it' ? 'en' : 'it')} className="text-[10px] font-black tracking-widest text-zinc-500 hover:text-white transition-colors border border-zinc-800 px-2 py-1 uppercase pointer-events-auto">
             {lang === 'it' ? 'EN' : 'IT'}
           </button>
         </header>
         <main className="flex-1 flex flex-col pt-16 overflow-hidden relative">
-          {activeTab === 'home' && <DashboardHome memberNumber={memberNumber} elapsedTime={elapsedTime} totalMembers={CURRENT_MEMBERS} lang={lang} />}
+          {activeTab === 'home' && <DashboardHome memberNumber={memberNumber} elapsedTime={elapsedTime} totalMembers={totalMembers} lang={lang} />}
           {activeTab === 'community' && <CommunityTab lang={lang} />}
-          {activeTab === 'profile' && <ProfileTab onLogout={handleLogout} lang={lang} />}
+          {activeTab === 'profile' && <ProfileTab onLogout={handleLogout} userEmail={userEmail} onManageSubscription={handleManageSubscription} lang={lang} />}
         </main>
         <nav className="fixed bottom-0 left-0 w-full bg-black/90 backdrop-blur-3xl border-t border-zinc-900/50 px-10 pb-[calc(1.2rem+safe-area-inset-bottom)] pt-4 z-[100]">
           <div className="max-w-md mx-auto flex justify-between items-center">
@@ -306,7 +349,7 @@ export default function Home() {
             <p className="text-zinc-400 text-lg font-light leading-relaxed">{t.landing_desc(TOTAL_SLOTS.toLocaleString(lang === 'it' ? 'it-IT' : 'en-US'))}</p>
           </div>
           <div className="space-y-6">
-            <button onClick={handleLogin} className="group relative w-full bg-white text-black py-6 rounded-none font-black text-xl flex items-center justify-center gap-2 overflow-hidden hover:scale-[0.98] transition-transform active:scale-95">
+            <button onClick={handleJoinNow} className="group relative w-full bg-white text-black py-6 rounded-none font-black text-xl flex items-center justify-center gap-2 overflow-hidden hover:scale-[0.98] transition-transform active:scale-95">
               <span className="relative z-10">{t.landing_main_btn}</span>
               <ArrowUpRight className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
             </button>
