@@ -98,6 +98,10 @@ export default function SelectNumberPage() {
     }
   };
 
+  const handleBack = () => {
+    router.push('/');
+  };
+
   const getPageNumbers = () => {
     const start = (currentPage - 1) * NUMBERS_PER_PAGE + 1;
     const end = Math.min(currentPage * NUMBERS_PER_PAGE, TOTAL_NUMBERS);
@@ -121,7 +125,7 @@ export default function SelectNumberPage() {
       <header className="fixed top-0 left-0 w-full px-6 py-8 z-40 bg-gradient-to-b from-black to-transparent">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <button 
-            onClick={() => router.push('/')}
+            onClick={handleBack}
             className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest"
           >
             <ArrowLeft size={14} />
