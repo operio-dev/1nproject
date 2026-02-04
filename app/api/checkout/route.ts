@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       .from('members')
       .select('member_number')
       .eq('member_number', selectedNumber)
-      .single()
+      .maybeSingle()
 
     if (existingMember) {
       return NextResponse.json({ error: 'Number already taken' }, { status: 409 })
@@ -40,8 +40,8 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/select-number`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/select-number?canceled=true`,
       client_reference_id: user.id,
       metadata: {
         user_id: user.id,
