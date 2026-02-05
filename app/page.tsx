@@ -161,17 +161,31 @@ export default function Home() {
   const supabase = createClient();
   const t = translations[lang];
 
+  // ✅ FIX: Usa ref per evitare doppio caricamento in React StrictMode
+  const hasLoadedRef = useRef(false);
+
   useEffect(() => {
+    // ✅ Previeni doppio caricamento
+    if (hasLoadedRef.current) return;
+    hasLoadedRef.current = true;
+    
     loadData();
   }, []);
 
   const loadData = async () => {
-    // Load membership first
-    await checkMembership();
-    // Then load total members
-    await fetchTotalMembers();
-    // Mark as loaded
-    setDataLoaded(true);
+    try {
+      // Load membership first
+      await checkMembership();
+      // Then load total members
+      await fetchTotalMembers();
+    } catch (error) {
+      console.error('Error loading data:', error);
+      // ✅ Anche in caso di errore, rimuovi loading
+      setLoading(false);
+    } finally {
+      // ✅ Mark as loaded dopo entrambe le operazioni
+      setDataLoaded(true);
+    }
   };
 
   const checkMembership = async () => {
