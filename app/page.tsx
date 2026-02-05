@@ -227,14 +227,40 @@ export default function Home() {
     }
   };
 
-  // Animation only runs AFTER data is loaded
+  // ✅ FIX: Animazione parte SOLO al primo load, non ad ogni aggiornamento
+  const hasAnimatedRef = useRef(false);
+
   useEffect(() => {
     if (!dataLoaded) return;
     
     if (memberNumber) {
-        setCount(totalMembers);
-        return;
+      setCount(totalMembers);
+      return;
     }
+    
+    // ✅ Anima solo la prima volta
+    if (hasAnimatedRef.current) {
+      setCount(totalMembers); // Update diretto senza animazione
+      return;
+    }
+    
+    hasAnimatedRef.current = true;
+    
+    const duration = 2000;
+    const start = 0;
+    const end = totalMembers;
+    let startTime: number | null = null;
+    
+    const animate = (currentTime: number) => {
+      if (!startTime) startTime = currentTime;
+      const progress = Math.min((currentTime - startTime) / duration, 1);
+      const easeOutProgress = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(easeOutProgress * (end - start) + start));
+      if (progress < 1) requestAnimationFrame(animate);
+    };
+    
+    requestAnimationFrame(animate);
+  }, [dataLoaded, memberNumber, totalMembers]);
     
     const duration = 2000;
     const start = 0;
