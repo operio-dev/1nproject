@@ -87,11 +87,21 @@ const CommunityTab = memo(({ lang, memberNumber }: { lang: 'it' | 'en', memberNu
   const t = translations[lang];
   const chatEndRef = useRef<HTMLDivElement>(null);
   
+  // ✅ Definisci il tipo corretto per i messaggi
+  type ChatMessage = {
+    id: number;
+    number: string;
+    text: string;
+  };
+  
   const [inputMessage, setInputMessage] = useState('');
-  const [messages, setMessages] = useState(MOCK_STATEMENTS.map((msg, idx) => ({
-    ...msg,
-    text: t.mock_statements[idx % t.mock_statements.length]
-  })));
+  const [messages, setMessages] = useState<ChatMessage[]>(
+    MOCK_STATEMENTS.map((msg, idx) => ({
+      id: msg.id,
+      number: msg.number.toString().padStart(6, '0'),
+      text: t.mock_statements[idx % t.mock_statements.length]
+    }))
+  );
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -100,7 +110,7 @@ const CommunityTab = memo(({ lang, memberNumber }: { lang: 'it' | 'en', memberNu
   const handleSendMessage = () => {
     if (!inputMessage.trim()) return;
     
-    const newMessage = {
+    const newMessage: ChatMessage = {
       id: Date.now(),
       number: memberNumber?.toString().padStart(6, '0') || '000000',
       text: inputMessage
