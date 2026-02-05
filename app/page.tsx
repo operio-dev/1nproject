@@ -82,12 +82,10 @@ const DashboardHome = memo(({ memberNumber, elapsedTime, totalMembers, lang }: {
   );
 });
 
-// ✅ FIX #4: Community Tab funzionale
 const CommunityTab = memo(({ lang, memberNumber }: { lang: 'it' | 'en', memberNumber: number | null }) => {
   const t = translations[lang];
   const chatEndRef = useRef<HTMLDivElement>(null);
   
-  // ✅ Definisci il tipo corretto per i messaggi
   type ChatMessage = {
     id: number;
     number: string;
@@ -212,7 +210,6 @@ export default function Home() {
   const supabase = createClient();
   const t = translations[lang];
 
-  // ✅ FIX #1: Usa ref per evitare doppio caricamento in React StrictMode
   const hasLoadedRef = useRef(false);
 
   useEffect(() => {
@@ -220,6 +217,54 @@ export default function Home() {
     hasLoadedRef.current = true;
     
     loadData();
+  }, []);
+
+  // ✅ NUOVO: Polling dopo pagamento completato
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const selectedNumber = urlParams.get('number');
+    
+    if (success === 'true' && selectedNumber) {
+      console.log('Payment successful, waiting for webhook...');
+      setLoading(true);
+      
+      const checkMemberCreated = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return false;
+        
+        const { data: member } = await supabase
+          .from('members')
+          .select('member_number')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        return !!member;
+      };
+      
+      let attempts = 0;
+      const maxAttempts = 15;
+      
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        const memberExists = await checkMemberCreated();
+        
+        if (memberExists) {
+          console.log('Member created! Loading dashboard...');
+          clearInterval(pollInterval);
+          await loadData();
+          window.history.replaceState({}, '', '/');
+        } else if (attempts >= maxAttempts) {
+          console.log('Timeout waiting for webhook');
+          clearInterval(pollInterval);
+          await loadData();
+          window.history.replaceState({}, '', '/');
+          alert('Pagamento completato! Se non vedi subito il tuo numero, ricarica la pagina tra qualche secondo.');
+        }
+      }, 2000);
+      
+      return () => clearInterval(pollInterval);
+    }
   }, []);
 
   const loadData = async () => {
@@ -273,7 +318,6 @@ export default function Home() {
     }
   };
 
-  // ✅ FIX #2: Animazione parte SOLO al primo load
   const hasAnimatedRef = useRef(false);
 
   useEffect(() => {
@@ -307,7 +351,6 @@ export default function Home() {
     requestAnimationFrame(animate);
   }, [dataLoaded, memberNumber, totalMembers]);
 
-  // ✅ FIX #3: Timer già corretto - countdown sempre attivo, elapsed solo se membro
   useEffect(() => {
     const updateTimers = () => {
       const now = new Date().getTime();
@@ -351,7 +394,6 @@ export default function Home() {
     router.push('/select-number');
   };
 
-  // ✅ FIX #5: Stripe Customer Portal
   const handleManageSubscription = async () => {
     try {
       const response = await fetch('/api/create-portal-session', {
