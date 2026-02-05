@@ -41,3 +41,17 @@ export async function POST(request: Request) {
     )
   }
 }
+```
+
+---
+
+## **📁 Struttura file corretta:**
+```
+app/
+├── api/
+│   ├── checkout/
+│   │   └── route.ts          ← Gestisce creazione checkout Stripe
+│   ├── create-portal-session/
+│   │   └── route.ts          ← Gestisce redirect a Stripe Portal
+│   └── webhook/
+│       └── route.ts          ← Gestisce webhook Stripe
