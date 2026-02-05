@@ -155,15 +155,24 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<'home' | 'community' | 'profile'>('home');
   const [isAnimating, setIsAnimating] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   const router = useRouter();
   const supabase = createClient();
   const t = translations[lang];
 
   useEffect(() => {
-    checkMembership();
-    fetchTotalMembers();
+    loadData();
   }, []);
+
+  const loadData = async () => {
+    // Load membership first
+    await checkMembership();
+    // Then load total members
+    await fetchTotalMembers();
+    // Mark as loaded
+    setDataLoaded(true);
+  };
 
   const checkMembership = async () => {
     try {
@@ -200,18 +209,24 @@ export default function Home() {
       setTotalMembers(count || 0);
     } catch (error) {
       console.error('Error fetching total members:', error);
+      setTotalMembers(0);
     }
   };
 
+  // Animation only runs AFTER data is loaded
   useEffect(() => {
+    if (!dataLoaded) return;
+    
     if (memberNumber) {
         setCount(totalMembers);
         return;
-    };
+    }
+    
     const duration = 2000;
     const start = 0;
     const end = totalMembers;
     let startTime: number | null = null;
+    
     const animate = (currentTime: number) => {
       if (!startTime) startTime = currentTime;
       const progress = Math.min((currentTime - startTime) / duration, 1);
@@ -219,8 +234,9 @@ export default function Home() {
       setCount(Math.floor(easeOutProgress * (end - start) + start));
       if (progress < 1) requestAnimationFrame(animate);
     };
+    
     requestAnimationFrame(animate);
-  }, [memberNumber, totalMembers]);
+  }, [dataLoaded, memberNumber, totalMembers]);
 
   useEffect(() => {
     const updateTimers = () => {
@@ -265,7 +281,6 @@ export default function Home() {
   };
 
   const handleManageSubscription = () => {
-    // TODO: Implement Stripe Customer Portal
     alert('Gestione abbonamento - Coming soon!\n\nQuesto aprirà il portale Stripe per gestire il tuo abbonamento.');
   };
 
@@ -278,7 +293,8 @@ export default function Home() {
       setUserEmail('');
       setActiveTab('home');
       setIsAnimating(false);
-      router.refresh();
+      // Force full page reload to clear cache
+      window.location.href = '/';
     }, 400);
   };
 
