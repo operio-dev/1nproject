@@ -2,7 +2,6 @@
 import { MemberStatement } from './types';
 
 export const TOTAL_SLOTS = 100000;
-export const CURRENT_MEMBERS = 0;
 export const PRICE_MONTHLY = "0,99€";
 
 export const MOCK_STATEMENTS: MemberStatement[] = [
