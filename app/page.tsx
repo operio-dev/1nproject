@@ -82,22 +82,50 @@ const DashboardHome = memo(({ memberNumber, elapsedTime, totalMembers, lang }: {
   );
 });
 
-const CommunityTab = memo(({ lang }: { lang: 'it' | 'en' }) => {
+// ✅ FIX #4: Community Tab funzionale
+const CommunityTab = memo(({ lang, memberNumber }: { lang: 'it' | 'en', memberNumber: number | null }) => {
   const t = translations[lang];
   const chatEndRef = useRef<HTMLDivElement>(null);
+  
+  const [inputMessage, setInputMessage] = useState('');
+  const [messages, setMessages] = useState(MOCK_STATEMENTS.map((msg, idx) => ({
+    ...msg,
+    text: t.mock_statements[idx % t.mock_statements.length]
+  })));
+
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'auto' });
-  }, []);
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSendMessage = () => {
+    if (!inputMessage.trim()) return;
+    
+    const newMessage = {
+      id: Date.now(),
+      number: memberNumber?.toString().padStart(6, '0') || '000000',
+      text: inputMessage
+    };
+    
+    setMessages(prev => [...prev, newMessage]);
+    setInputMessage('');
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
 
   return (
     <div className="flex flex-col h-full w-full max-w-md mx-auto animate-in fade-in slide-in-from-right-6 duration-500 overflow-hidden text-white">
-      <div className="flex-1 overflow-y-auto px-4 pt-6 pb-4 no-scrollbar overscroll-contain scroll-smooth" style={{ scrollAnchoring: 'auto' } as any}>
+      <div className="flex-1 overflow-y-auto px-4 pt-6 pb-4 no-scrollbar overscroll-contain scroll-smooth">
         <div className="space-y-4">
-          {MOCK_STATEMENTS.map((msg, idx) => (
+          {messages.map((msg) => (
             <div key={msg.id} className="flex flex-col items-start space-y-1 max-w-[85%]">
               <div className="bg-zinc-100 text-black px-4 py-3 rounded-2xl text-[14px] font-medium shadow-sm leading-snug">
                 <span className="font-bold text-[9px] block opacity-30 mb-1 tracking-widest uppercase">#{msg.number}</span>
-                {t.mock_statements[idx % t.mock_statements.length]}
+                {msg.text}
               </div>
             </div>
           ))}
@@ -106,8 +134,21 @@ const CommunityTab = memo(({ lang }: { lang: 'it' | 'en' }) => {
       </div>
       <div className="flex-none w-full px-6 py-4 bg-black border-t border-zinc-900 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
         <div className="w-full max-w-sm mx-auto relative group">
-           <input type="text" placeholder={t.comm_placeholder} className="w-full bg-zinc-900 border border-zinc-800 rounded-full py-4 px-6 text-[15px] focus:outline-none focus:border-white/20 transition-all pr-14 placeholder:text-zinc-700 text-white" />
-           <button className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white text-black rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform"><Send size={18} fill="black" /></button>
+          <input 
+            type="text" 
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder={t.comm_placeholder} 
+            className="w-full bg-zinc-900 border border-zinc-800 rounded-full py-4 px-6 text-[15px] focus:outline-none focus:border-white/20 transition-all pr-14 placeholder:text-zinc-700 text-white" 
+          />
+          <button 
+            onClick={handleSendMessage}
+            disabled={!inputMessage.trim()}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white text-black rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Send size={18} fill="black" />
+          </button>
         </div>
       </div>
     </div>
@@ -161,11 +202,10 @@ export default function Home() {
   const supabase = createClient();
   const t = translations[lang];
 
-  // ✅ FIX: Usa ref per evitare doppio caricamento in React StrictMode
+  // ✅ FIX #1: Usa ref per evitare doppio caricamento in React StrictMode
   const hasLoadedRef = useRef(false);
 
   useEffect(() => {
-    // ✅ Previeni doppio caricamento
     if (hasLoadedRef.current) return;
     hasLoadedRef.current = true;
     
@@ -174,16 +214,12 @@ export default function Home() {
 
   const loadData = async () => {
     try {
-      // Load membership first
       await checkMembership();
-      // Then load total members
       await fetchTotalMembers();
     } catch (error) {
       console.error('Error loading data:', error);
-      // ✅ Anche in caso di errore, rimuovi loading
       setLoading(false);
     } finally {
-      // ✅ Mark as loaded dopo entrambe le operazioni
       setDataLoaded(true);
     }
   };
@@ -227,7 +263,7 @@ export default function Home() {
     }
   };
 
-  // ✅ FIX: Animazione parte SOLO al primo load, non ad ogni aggiornamento
+  // ✅ FIX #2: Animazione parte SOLO al primo load
   const hasAnimatedRef = useRef(false);
 
   useEffect(() => {
@@ -238,9 +274,8 @@ export default function Home() {
       return;
     }
     
-    // ✅ Anima solo la prima volta
     if (hasAnimatedRef.current) {
-      setCount(totalMembers); // Update diretto senza animazione
+      setCount(totalMembers);
       return;
     }
     
@@ -261,23 +296,8 @@ export default function Home() {
     
     requestAnimationFrame(animate);
   }, [dataLoaded, memberNumber, totalMembers]);
-    
-    const duration = 2000;
-    const start = 0;
-    const end = totalMembers;
-    let startTime: number | null = null;
-    
-    const animate = (currentTime: number) => {
-      if (!startTime) startTime = currentTime;
-      const progress = Math.min((currentTime - startTime) / duration, 1);
-      const easeOutProgress = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.floor(easeOutProgress * (end - start) + start));
-      if (progress < 1) requestAnimationFrame(animate);
-    };
-    
-    requestAnimationFrame(animate);
-  }, [dataLoaded, memberNumber, totalMembers]);
 
+  // ✅ FIX #3: Timer già corretto - countdown sempre attivo, elapsed solo se membro
   useEffect(() => {
     const updateTimers = () => {
       const now = new Date().getTime();
@@ -307,6 +327,7 @@ export default function Home() {
         }
       }
     };
+    
     const timer = setInterval(updateTimers, 1000);
     updateTimers();
     return () => clearInterval(timer);
@@ -320,8 +341,26 @@ export default function Home() {
     router.push('/select-number');
   };
 
-  const handleManageSubscription = () => {
-    alert('Gestione abbonamento - Coming soon!\n\nQuesto aprirà il portale Stripe per gestire il tuo abbonamento.');
+  // ✅ FIX #5: Stripe Customer Portal
+  const handleManageSubscription = async () => {
+    try {
+      const response = await fetch('/api/create-portal-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      const { url, error } = await response.json();
+      
+      if (error) {
+        alert('Errore: ' + error);
+        return;
+      }
+      
+      window.location.href = url;
+    } catch (error) {
+      console.error('Error creating portal session:', error);
+      alert('Errore nella creazione della sessione. Riprova.');
+    }
   };
 
   const handleLogout = async () => {
@@ -333,7 +372,6 @@ export default function Home() {
       setUserEmail('');
       setActiveTab('home');
       setIsAnimating(false);
-      // Force full page reload to clear cache
       window.location.href = '/';
     }, 400);
   };
@@ -359,7 +397,7 @@ export default function Home() {
         </header>
         <main className="flex-1 flex flex-col pt-16 overflow-hidden relative">
           {activeTab === 'home' && <DashboardHome memberNumber={memberNumber} elapsedTime={elapsedTime} totalMembers={totalMembers} lang={lang} />}
-          {activeTab === 'community' && <CommunityTab lang={lang} />}
+          {activeTab === 'community' && <CommunityTab lang={lang} memberNumber={memberNumber} />}
           {activeTab === 'profile' && <ProfileTab onLogout={handleLogout} userEmail={userEmail} onManageSubscription={handleManageSubscription} lang={lang} />}
         </main>
         <nav className="fixed bottom-0 left-0 w-full bg-black/90 backdrop-blur-3xl border-t border-zinc-900/50 px-10 pb-[calc(1.2rem+safe-area-inset-bottom)] pt-4 z-[100]">
