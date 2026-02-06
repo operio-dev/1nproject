@@ -180,7 +180,7 @@ export default function SelectNumberPage() {
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-5 sm:grid-cols-10 gap-2 mb-8">
+        <div className="grid grid-cols-5 sm:grid-cols-10 gap-3 mb-12">
           {getPageNumbers().map((num) => {
             const isTaken = takenNumbers.has(num);
             const isSelected = selectedNumber === num;
@@ -192,14 +192,15 @@ export default function SelectNumberPage() {
                   onClick={() => handleNumberClick(num)}
                   disabled={isTaken || blocked}
                   className={`
-                    aspect-square flex items-center justify-center text-sm font-medium
+                    w-full aspect-square flex items-center justify-center text-lg
                     transition-all duration-200 relative overflow-hidden
+                    focus:outline-none
                     ${blocked
-                      ? 'col-span-2 row-span-2 bg-gradient-to-br from-yellow-600 via-yellow-500 to-yellow-700 text-black cursor-not-allowed border-2 border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.5)] animate-pulse font-bold'
+                      ? 'col-span-2 row-span-2 bg-gradient-to-br from-yellow-600 via-yellow-500 to-yellow-700 text-black cursor-not-allowed border-2 border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.5)] animate-pulse font-bold text-2xl'
                       : isTaken 
                       ? 'bg-zinc-100 text-zinc-300 cursor-not-allowed border border-zinc-200' 
                       : isSelected
-                      ? 'bg-black text-white scale-110 shadow-lg border-2 border-black'
+                      ? 'bg-black text-white scale-105 shadow-xl border border-black'
                       : 'bg-white text-black hover:bg-zinc-50 border border-zinc-200 hover:border-black hover:scale-105'
                     }
                   `}
@@ -210,7 +211,7 @@ export default function SelectNumberPage() {
                       className="absolute top-1 right-1 opacity-50" 
                     />
                   )}
-                  <span className={blocked ? 'text-lg' : ''}>
+                  <span className={blocked ? 'text-2xl font-bold' : ''}>
                     {num}
                   </span>
                 </button>
@@ -242,7 +243,7 @@ export default function SelectNumberPage() {
             <span>Precedente</span>
           </button>
           
-          <div className="text-zinc-500 text-sm font-mono">
+          <div className="text-zinc-400 text-sm">
             Pagina {currentPage} di {TOTAL_PAGES.toLocaleString('it-IT')}
           </div>
           
