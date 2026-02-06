@@ -36,8 +36,8 @@ const DashboardHome = memo(({ memberNumber, elapsedTime, totalMembers, lang }: {
   }
 
   return (
-    <div className="flex-1 flex flex-col justify-between items-center w-full max-w-sm mx-auto pt-6 pb-28 px-6 animate-in fade-in slide-in-from-bottom-6 duration-700 h-full overflow-hidden text-white">
-      <div className="bg-white text-black px-5 py-2 rounded-full shadow-2xl scale-90 sm:scale-100">
+    <div className="flex-1 flex flex-col justify-between items-center w-full max-w-sm mx-auto pt-6 pb-28 px-6 animate-in fade-in slide-in-from-bottom-6 duration-700 h-full overflow-hidden text-black">
+      <div className="bg-black text-white px-5 py-2 rounded-full shadow-2xl scale-90 sm:scale-100">
         <span className="text-[14px] font-black tracking-tighter">
           #{memberNumber?.toString().padStart(6, '0').replace(/(\d{3})(\d{3})/, '$1 $2')}
         </span>
@@ -55,8 +55,8 @@ const DashboardHome = memo(({ memberNumber, elapsedTime, totalMembers, lang }: {
           <div className="flex items-center gap-1.5"><Flame size={12} className="text-orange-500 fill-orange-500" /><span>{t.dash_status_active}</span></div>
           <div className="flex items-center gap-1.5"><Star size={12} className="text-zinc-400" /><span>{currentLevelName}</span></div>
         </div>
-        <div className="h-2 w-full bg-zinc-900 rounded-full overflow-hidden border border-zinc-800/20 p-[1px]">
-          <div className="h-full bg-gradient-to-r from-zinc-500 to-white rounded-full transition-all duration-1000" style={{ width: `${levelProgress}%` }} />
+        <div className="h-2 w-full bg-zinc-100 rounded-full overflow-hidden border border-zinc-200/20 p-[1px]">
+          <div className="h-full bg-gradient-to-r from-zinc-500 to-black rounded-full transition-all duration-1000" style={{ width: `${levelProgress}%` }} />
         </div>
         <div className="flex justify-between text-[9px] font-black text-zinc-600 uppercase tracking-tighter">
           <span>{t.dash_day(totalElapsedDays)}</span>
@@ -67,17 +67,15 @@ const DashboardHome = memo(({ memberNumber, elapsedTime, totalMembers, lang }: {
       <div className="flex flex-col items-center space-y-2 mt-4">
         <div className="relative w-24 h-24 flex items-center justify-center">
           <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90 overflow-visible">
-            <circle cx="50" cy="50" r="42" fill="transparent" stroke="#111" strokeWidth="6" />
-            <circle cx="50" cy="50" r="42" fill="transparent" stroke="#FFFFFF" strokeWidth="6" strokeDasharray="264" strokeDashoffset={`${264 - (memberProgress / 100 * 264)}`} strokeLinecap="round" className="drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] transition-all duration-1000 ease-in-out" />
+            <circle cx="50" cy="50" r="42" fill="transparent" stroke="#eee" strokeWidth="6" />
+            <circle cx="50" cy="50" r="42" fill="transparent" stroke="#000000" strokeWidth="6" strokeDasharray="264" strokeDashoffset={`${264 - (memberProgress / 100 * 264)}`} strokeLinecap="round" className="drop-shadow-[0_0_8px_rgba(0,0,0,0.3)] transition-all duration-1000 ease-in-out" />
           </svg>
-          <span className="absolute text-[14px] font-black text-white">
-  {memberProgress < 1 && memberProgress > 0 ? '<1%' : `${Math.floor(memberProgress)}%`}
-</span>
+          <span className="absolute text-[14px] font-black text-black">{memberProgress < 1 && memberProgress > 0 ? '<1%' : `${Math.floor(memberProgress)}%`}</span>
         </div>
         <div className="text-center">
           <div className="text-4xl font-black tracking-tighter leading-tight">{totalMembers.toLocaleString(lang === 'it' ? 'it-IT' : 'en-US')}</div>
           <div className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] -mt-1">{t.dash_active_members}</div>
-          <div className="text-[9px] text-zinc-700 uppercase tracking-widest whitespace-nowrap opacity-60 mt-1.5">{t.dash_out_of(TOTAL_SLOTS.toLocaleString(lang === 'it' ? 'it-IT' : 'en-US'))}</div>
+          <div className="text-[9px] text-zinc-300 uppercase tracking-widest whitespace-nowrap opacity-60 mt-1.5">{t.dash_out_of(TOTAL_SLOTS.toLocaleString(lang === 'it' ? 'it-IT' : 'en-US'))}</div>
         </div>
       </div>
     </div>
@@ -128,7 +126,7 @@ const CommunityTab = memo(({ lang, memberNumber }: { lang: 'it' | 'en', memberNu
   };
 
   return (
-    <div className="flex flex-col h-full w-full max-w-md mx-auto animate-in fade-in slide-in-from-right-6 duration-500 overflow-hidden text-white">
+    <div className="flex flex-col h-full w-full max-w-md mx-auto animate-in fade-in slide-in-from-right-6 duration-500 overflow-hidden text-black">
       <div className="flex-1 overflow-y-auto px-4 pt-6 pb-4 no-scrollbar overscroll-contain scroll-smooth">
         <div className="space-y-4">
           {messages.map((msg) => (
@@ -142,7 +140,7 @@ const CommunityTab = memo(({ lang, memberNumber }: { lang: 'it' | 'en', memberNu
           <div ref={chatEndRef} className="h-4" />
         </div>
       </div>
-      <div className="flex-none w-full px-6 py-4 bg-black border-t border-zinc-900 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
+      <div className="flex-none w-full px-6 py-4 bg-white border-t border-zinc-100 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.1)]">
         <div className="w-full max-w-sm mx-auto relative group">
           <input 
             type="text" 
@@ -150,7 +148,7 @@ const CommunityTab = memo(({ lang, memberNumber }: { lang: 'it' | 'en', memberNu
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder={t.comm_placeholder} 
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-full py-4 px-6 text-[15px] focus:outline-none focus:border-white/20 transition-all pr-14 placeholder:text-zinc-700 text-white" 
+            className="w-full bg-zinc-100 border border-zinc-200 rounded-full py-4 px-6 text-[15px] focus:outline-none focus:border-black/20 transition-all pr-14 placeholder:text-zinc-300 text-black" 
           />
           <button 
             onClick={handleSendMessage}
@@ -168,7 +166,7 @@ const CommunityTab = memo(({ lang, memberNumber }: { lang: 'it' | 'en', memberNu
 const ProfileTab = memo(({ onLogout, userEmail, onManageSubscription, lang }: { onLogout: () => void, userEmail: string, onManageSubscription: () => void, lang: 'it' | 'en' }) => {
   const t = translations[lang];
   return (
-    <div className="flex-1 flex flex-col justify-center items-center w-full max-w-xs mx-auto space-y-12 animate-in fade-in zoom-in duration-500 px-6 h-full text-white">
+    <div className="flex-1 flex flex-col justify-center items-center w-full max-w-xs mx-auto space-y-12 animate-in fade-in zoom-in duration-500 px-6 h-full text-black">
       <div className="text-center space-y-2">
         <h3 className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-black">{t.profile_id}</h3>
         <p className="text-zinc-200 font-mono text-sm tracking-tighter break-all px-4">{userEmail}</p>
@@ -176,20 +174,20 @@ const ProfileTab = memo(({ onLogout, userEmail, onManageSubscription, lang }: { 
       <div className="space-y-4 w-full">
         <button 
           onClick={onManageSubscription}
-          className="w-full py-5 bg-white text-black text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl hover:bg-zinc-200 transition-colors"
+          className="w-full py-5 bg-white text-black text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl hover:bg-zinc-50 transition-colors"
         >
           <CreditCard size={16} />
           <span>{t.profile_manage}</span>
         </button>
         <button 
           onClick={onLogout} 
-          className="w-full py-5 border border-zinc-900 text-zinc-600 text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:border-zinc-700 hover:text-zinc-400 transition-colors"
+          className="w-full py-5 border border-zinc-100 text-zinc-600 text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:border-zinc-300 hover:text-zinc-400 transition-colors"
         >
           <LogOut size={16} />
           <span>{t.profile_leave}</span>
         </button>
       </div>
-      <div className="text-[9px] text-zinc-800 font-mono text-center uppercase tracking-[0.4em] pt-10">{t.profile_node}</div>
+      <div className="text-[9px] text-zinc-200 font-mono text-center uppercase tracking-[0.4em] pt-10">{t.profile_node}</div>
     </div>
   );
 });
@@ -418,38 +416,34 @@ export default function Home() {
   };
 
   const handleLogout = async () => {
-  setIsAnimating(true);
-  await supabase.auth.signOut();
-  setTimeout(() => {
-    setMemberNumber(null);
-    setMemberJoinDate(null);
-    setUserEmail('');
-    setActiveTab('home');
-    setIsAnimating(false);
-    
-    // ✅ Ricarica i dati prima di reindirizzare
-    fetchTotalMembers().then(() => {
-      router.push('/');
-      router.refresh();
-    });
-  }, 400);
-};
+    setIsAnimating(true);
+    await supabase.auth.signOut();
+    setTimeout(() => {
+      setMemberNumber(null);
+      setMemberJoinDate(null);
+      setUserEmail('');
+      setActiveTab('home');
+      setIsAnimating(false);
+      window.location.href = '/';
+    }, 400);
+  };
+
   const progressPercentage = (totalMembers / TOTAL_SLOTS) * 100;
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-2xl font-black tracking-tighter text-white">1N</div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-2xl font-black tracking-tighter text-black">1N</div>
       </div>
     );
   }
 
   if (memberNumber) {
     return (
-      <div className={`h-[100dvh] bg-black text-white relative flex flex-col overflow-hidden transition-opacity duration-500 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
-        <header className="fixed top-0 left-0 w-full px-8 py-6 z-[60] flex justify-between items-center bg-gradient-to-b from-black to-transparent">
-          <div className="text-2xl font-black tracking-tighter text-white cursor-pointer select-none">1N</div>
-          <button onClick={() => setLang(l => l === 'it' ? 'en' : 'it')} className="text-[10px] font-black tracking-widest text-zinc-500 hover:text-white transition-colors border border-zinc-800 px-2 py-1 uppercase pointer-events-auto">
+      <div className={`h-[100dvh] bg-white text-black relative flex flex-col overflow-hidden transition-opacity duration-500 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
+        <header className="fixed top-0 left-0 w-full px-8 py-6 z-[60] flex justify-between items-center bg-gradient-to-b from-white to-transparent">
+          <div className="text-2xl font-black tracking-tighter text-black cursor-pointer select-none">1N</div>
+          <button onClick={() => setLang(l => l === 'it' ? 'en' : 'it')} className="text-[10px] font-black tracking-widest text-zinc-500 hover:text-white transition-colors border border-zinc-200 px-2 py-1 uppercase pointer-events-auto">
             {lang === 'it' ? 'EN' : 'IT'}
           </button>
         </header>
@@ -458,11 +452,11 @@ export default function Home() {
           {activeTab === 'community' && <CommunityTab lang={lang} memberNumber={memberNumber} />}
           {activeTab === 'profile' && <ProfileTab onLogout={handleLogout} userEmail={userEmail} onManageSubscription={handleManageSubscription} lang={lang} />}
         </main>
-        <nav className="fixed bottom-0 left-0 w-full bg-black/90 backdrop-blur-3xl border-t border-zinc-900/50 px-10 pb-[calc(1.2rem+safe-area-inset-bottom)] pt-4 z-[100]">
+        <nav className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-3xl border-t border-zinc-100/50 px-10 pb-[calc(1.2rem+safe-area-inset-bottom)] pt-4 z-[100]">
           <div className="max-w-md mx-auto flex justify-between items-center">
-            <button onClick={() => setActiveTab('home')} className={`p-2 transition-all duration-300 ${activeTab === 'home' ? 'text-white scale-125' : 'text-zinc-700'}`}><HomeIcon size={24} strokeWidth={activeTab === 'home' ? 3 : 2} /></button>
-            <button onClick={() => setActiveTab('community')} className={`p-2 transition-all duration-300 ${activeTab === 'community' ? 'text-white scale-125' : 'text-zinc-700'}`}><Users size={24} strokeWidth={activeTab === 'community' ? 3 : 2} /></button>
-            <button onClick={() => setActiveTab('profile')} className={`p-2 transition-all duration-300 ${activeTab === 'profile' ? 'text-white scale-125' : 'text-zinc-700'}`}><UserCircle size={24} strokeWidth={activeTab === 'profile' ? 3 : 2} /></button>
+            <button onClick={() => setActiveTab('home')} className={`p-2 transition-all duration-300 ${activeTab === 'home' ? 'text-black scale-125' : 'text-zinc-300'}`}><HomeIcon size={24} strokeWidth={activeTab === 'home' ? 3 : 2} /></button>
+            <button onClick={() => setActiveTab('community')} className={`p-2 transition-all duration-300 ${activeTab === 'community' ? 'text-black scale-125' : 'text-zinc-300'}`}><Users size={24} strokeWidth={activeTab === 'community' ? 3 : 2} /></button>
+            <button onClick={() => setActiveTab('profile')} className={`p-2 transition-all duration-300 ${activeTab === 'profile' ? 'text-black scale-125' : 'text-zinc-300'}`}><UserCircle size={24} strokeWidth={activeTab === 'profile' ? 3 : 2} /></button>
           </div>
         </nav>
       </div>
@@ -470,19 +464,19 @@ export default function Home() {
   }
 
   return (
-    <div className={`min-h-screen bg-black text-white selection:bg-white selection:text-black transition-opacity duration-500 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
-      <div className="fixed top-0 left-0 w-full h-[2px] bg-zinc-900 z-50">
+    <div className={`min-h-screen bg-white text-black selection:bg-white selection:text-black transition-opacity duration-500 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
+      <div className="fixed top-0 left-0 w-full h-[2px] bg-zinc-100 z-50">
         <div className="h-full bg-white transition-all duration-1000 ease-out" style={{ width: `${progressPercentage}%` }} />
       </div>
 
-      <header className="fixed top-0 left-0 w-full flex justify-between items-center px-6 py-8 z-40 bg-gradient-to-b from-black to-transparent">
+      <header className="fixed top-0 left-0 w-full flex justify-between items-center px-6 py-8 z-40 bg-gradient-to-b from-white to-transparent">
         <div className="flex items-center gap-4">
           <div className="text-2xl font-black tracking-tighter cursor-pointer select-none">1N</div>
-          <button onClick={() => setLang(l => l === 'it' ? 'en' : 'it')} className="text-[10px] font-black tracking-widest text-zinc-500 hover:text-white transition-colors border border-zinc-800 px-2 py-1 uppercase">
+          <button onClick={() => setLang(l => l === 'it' ? 'en' : 'it')} className="text-[10px] font-black tracking-widest text-zinc-500 hover:text-white transition-colors border border-zinc-200 px-2 py-1 uppercase">
             {lang === 'it' ? 'EN' : 'IT'}
           </button>
         </div>
-        <button onClick={handleLogin} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest border border-zinc-800 bg-black/50 backdrop-blur-md px-5 py-2.5 hover:bg-white hover:text-black transition-all duration-300 rounded-none shadow-sm">
+        <button onClick={handleLogin} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest border border-zinc-200 bg-white/50 backdrop-blur-md px-5 py-2.5 hover:bg-white hover:text-white transition-all duration-300 rounded-none shadow-sm">
           <User size={14} /> <span>{t.header_login}</span>
         </button>
       </header>
@@ -492,9 +486,9 @@ export default function Home() {
           <div className="space-y-2">
             <div className="text-zinc-500 text-[10px] uppercase tracking-[0.3em] font-black">{t.landing_reserved}</div>
             <div className="text-5xl md:text-6xl font-black tracking-tight font-sans">
-              {count.toLocaleString(lang === 'it' ? 'it-IT' : 'en-US')} <span className="text-zinc-800">/</span> {TOTAL_SLOTS.toLocaleString(lang === 'it' ? 'it-IT' : 'en-US')}
+              {count.toLocaleString(lang === 'it' ? 'it-IT' : 'en-US')} <span className="text-zinc-200">/</span> {TOTAL_SLOTS.toLocaleString(lang === 'it' ? 'it-IT' : 'en-US')}
             </div>
-            <div className="h-px w-full bg-zinc-900 mt-4" />
+            <div className="h-px w-full bg-zinc-100 mt-4" />
           </div>
           <div className="space-y-6">
             <h1 className="text-4xl md:text-5xl font-black leading-[1.05] tracking-tight">{lang === 'it' ? <>Paga 1€ al mese.<br />Per niente.</> : <>Pay 1€ a month.<br />For nothing.</>}</h1>
@@ -512,22 +506,22 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="mt-24 bg-zinc-950 border border-zinc-900 p-8 space-y-8 text-center">
+        <section className="mt-24 bg-zinc-50 border border-zinc-100 p-8 space-y-8 text-center">
           <div className="text-[10px] uppercase tracking-[0.4em] text-zinc-600 font-black">{t.landing_next_cancel}</div>
           <div className="flex justify-center gap-5 text-2xl font-black font-mono">
-            <div className="flex flex-col"><span>{String(timeLeft.days).padStart(2, '0')}</span><span className="text-[8px] text-zinc-700 tracking-widest pt-1 uppercase">{t.timer_days}</span></div>
-            <span className="text-zinc-800 opacity-30">:</span>
-            <div className="flex flex-col"><span>{String(timeLeft.hours).padStart(2, '0')}</span><span className="text-[8px] text-zinc-700 tracking-widest pt-1 uppercase">{t.timer_hours}</span></div>
-            <span className="text-zinc-800 opacity-30">:</span>
-            <div className="flex flex-col"><span>{String(timeLeft.minutes).padStart(2, '0')}</span><span className="text-[8px] text-zinc-700 tracking-widest pt-1 uppercase">{t.timer_min}</span></div>
-            <span className="text-zinc-800 opacity-30">:</span>
-            <div className="flex flex-col"><span className="text-white">{String(timeLeft.seconds).padStart(2, '0')}</span><span className="text-[8px] text-zinc-700 tracking-widest pt-1 uppercase">{t.timer_sec}</span></div>
+            <div className="flex flex-col"><span>{String(timeLeft.days).padStart(2, '0')}</span><span className="text-[8px] text-zinc-300 tracking-widest pt-1 uppercase">{t.timer_days}</span></div>
+            <span className="text-zinc-200 opacity-30">:</span>
+            <div className="flex flex-col"><span>{String(timeLeft.hours).padStart(2, '0')}</span><span className="text-[8px] text-zinc-300 tracking-widest pt-1 uppercase">{t.timer_hours}</span></div>
+            <span className="text-zinc-200 opacity-30">:</span>
+            <div className="flex flex-col"><span>{String(timeLeft.minutes).padStart(2, '0')}</span><span className="text-[8px] text-zinc-300 tracking-widest pt-1 uppercase">{t.timer_min}</span></div>
+            <span className="text-zinc-200 opacity-30">:</span>
+            <div className="flex flex-col"><span className="text-black">{String(timeLeft.seconds).padStart(2, '0')}</span><span className="text-[8px] text-zinc-300 tracking-widest pt-1 uppercase">{t.timer_sec}</span></div>
           </div>
         </section>
 
-        <footer className="mt-32 border-t border-zinc-900 pt-16 pb-12 text-center space-y-8">
+        <footer className="mt-32 border-t border-zinc-100 pt-16 pb-12 text-center space-y-8">
           <div className="text-5xl font-black tracking-tighter text-zinc-900 select-none">1N</div>
-          <p className="text-[10px] text-zinc-800 font-mono uppercase tracking-[0.5em]">&copy; 2026 {t.footer_project}.</p>
+          <p className="text-[10px] text-zinc-200 font-mono uppercase tracking-[0.5em]">&copy; 2026 {t.footer_project}.</p>
         </footer>
       </main>
     </div>
