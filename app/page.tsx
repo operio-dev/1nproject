@@ -239,11 +239,13 @@ export default function Home() {
   const hasLoadedRef = useRef(false);
 
   useEffect(() => {
-    if (hasLoadedRef.current) return;
-    hasLoadedRef.current = true;
-    
-    loadData();
-  }, []);
+  if (hasLoadedRef.current) return;
+  hasLoadedRef.current = true;
+  
+  checkMembership(); // Controlla se loggato
+  fetchTotalMembers(); // Carica SEMPRE il conteggio
+  setDataLoaded(true);
+}, []);
 
   // ✅ NUOVO: Polling dopo pagamento completato
   useEffect(() => {
