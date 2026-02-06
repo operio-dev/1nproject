@@ -192,10 +192,10 @@ export default function SelectNumberPage() {
                   onClick={() => handleNumberClick(num)}
                   disabled={isTaken || blocked}
                   className={`
-                    aspect-square flex items-center justify-center text-sm font-black
+                    aspect-square flex items-center justify-center text-sm font-medium
                     transition-all duration-200 relative overflow-hidden
                     ${blocked
-                      ? 'col-span-2 row-span-2 bg-gradient-to-br from-yellow-600 via-yellow-500 to-yellow-700 text-black cursor-not-allowed border-2 border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.5)] animate-pulse'
+                      ? 'col-span-2 row-span-2 bg-gradient-to-br from-yellow-600 via-yellow-500 to-yellow-700 text-black cursor-not-allowed border-2 border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.5)] animate-pulse font-bold'
                       : isTaken 
                       ? 'bg-zinc-100 text-zinc-300 cursor-not-allowed border border-zinc-200' 
                       : isSelected
