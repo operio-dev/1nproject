@@ -169,7 +169,7 @@ const ProfileTab = memo(({ onLogout, userEmail, onManageSubscription, lang }: { 
     <div className="flex-1 flex flex-col justify-center items-center w-full max-w-xs mx-auto space-y-12 animate-in fade-in zoom-in duration-500 px-6 h-full text-black">
       <div className="text-center space-y-2">
         <h3 className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-black">{t.profile_id}</h3>
-        <p className="text-zinc-200 font-mono text-sm tracking-tighter break-all px-4">{userEmail}</p>
+        <p className="text-zinc-400 font-mono text-sm tracking-tighter break-all px-4">{userEmail}</p>
       </div>
       <div className="space-y-4 w-full">
         <button 
@@ -187,7 +187,7 @@ const ProfileTab = memo(({ onLogout, userEmail, onManageSubscription, lang }: { 
           <span>{t.profile_leave}</span>
         </button>
       </div>
-      <div className="text-[9px] text-zinc-200 font-mono text-center uppercase tracking-[0.4em] pt-10">{t.profile_node}</div>
+      <div className="text-[9px] text-zinc-400 font-mono text-center uppercase tracking-[0.4em] pt-10">{t.profile_node}</div>
     </div>
   );
 });
@@ -486,7 +486,7 @@ export default function Home() {
           <div className="space-y-2">
             <div className="text-zinc-500 text-[10px] uppercase tracking-[0.3em] font-black">{t.landing_reserved}</div>
             <div className="text-5xl md:text-6xl font-black tracking-tight font-sans">
-              {count.toLocaleString(lang === 'it' ? 'it-IT' : 'en-US')} <span className="text-zinc-200">/</span> {TOTAL_SLOTS.toLocaleString(lang === 'it' ? 'it-IT' : 'en-US')}
+              {count.toLocaleString(lang === 'it' ? 'it-IT' : 'en-US')} <span className="text-zinc-400">/</span> {TOTAL_SLOTS.toLocaleString(lang === 'it' ? 'it-IT' : 'en-US')}
             </div>
             <div className="h-px w-full bg-zinc-100 mt-4" />
           </div>
@@ -510,18 +510,18 @@ export default function Home() {
           <div className="text-[10px] uppercase tracking-[0.4em] text-zinc-600 font-black">{t.landing_next_cancel}</div>
           <div className="flex justify-center gap-5 text-2xl font-black font-mono">
             <div className="flex flex-col"><span>{String(timeLeft.days).padStart(2, '0')}</span><span className="text-[8px] text-zinc-300 tracking-widest pt-1 uppercase">{t.timer_days}</span></div>
-            <span className="text-zinc-200 opacity-30">:</span>
+            <span className="text-zinc-400 opacity-30">:</span>
             <div className="flex flex-col"><span>{String(timeLeft.hours).padStart(2, '0')}</span><span className="text-[8px] text-zinc-300 tracking-widest pt-1 uppercase">{t.timer_hours}</span></div>
-            <span className="text-zinc-200 opacity-30">:</span>
+            <span className="text-zinc-400 opacity-30">:</span>
             <div className="flex flex-col"><span>{String(timeLeft.minutes).padStart(2, '0')}</span><span className="text-[8px] text-zinc-300 tracking-widest pt-1 uppercase">{t.timer_min}</span></div>
-            <span className="text-zinc-200 opacity-30">:</span>
+            <span className="text-zinc-400 opacity-30">:</span>
             <div className="flex flex-col"><span className="text-black">{String(timeLeft.seconds).padStart(2, '0')}</span><span className="text-[8px] text-zinc-300 tracking-widest pt-1 uppercase">{t.timer_sec}</span></div>
           </div>
         </section>
 
         <footer className="mt-32 border-t border-zinc-100 pt-16 pb-12 text-center space-y-8">
           <div className="text-5xl font-black tracking-tighter text-zinc-900 select-none">1N</div>
-          <p className="text-[10px] text-zinc-200 font-mono uppercase tracking-[0.5em]">&copy; 2026 {t.footer_project}.</p>
+          <p className="text-[10px] text-zinc-400 font-mono uppercase tracking-[0.5em]">&copy; 2026 {t.footer_project}.</p>
         </footer>
       </main>
     </div>
