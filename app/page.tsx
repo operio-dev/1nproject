@@ -312,11 +312,39 @@ export default function Home() {
         
         const { data: member } = await supabase
           .from('members')
-          .select('member_number, join_date')
+          .select('member_number, join_date, status, subscription_end_date, cancel_at_period_end')
           .eq('user_id', user.id)
           .maybeSingle();
         
         if (member) {
+          // ✅ CHECK: Se abbonamento scaduto o cancellato → blocca accesso
+          if (member.status === 'cancelled' || member.status === 'expired') {
+            console.log('⚠️ Subscription expired/cancelled - redirecting to landing');
+            await supabase.auth.signOut();
+            setMemberNumber(null);
+            setMemberJoinDate(null);
+            setUserEmail('');
+            setLoading(false);
+            return;
+          }
+          
+          // ✅ CHECK: Se subscription_end_date passata → blocca accesso
+          if (member.subscription_end_date) {
+            const endDate = new Date(member.subscription_end_date).getTime();
+            const now = new Date().getTime();
+            
+            if (now > endDate && member.status !== 'active') {
+              console.log('⚠️ Subscription period ended - redirecting to landing');
+              await supabase.auth.signOut();
+              setMemberNumber(null);
+              setMemberJoinDate(null);
+              setUserEmail('');
+              setLoading(false);
+              return;
+            }
+          }
+          
+          // ✅ Abbonamento valido → mostra dashboard
           setMemberNumber(member.member_number);
           setMemberJoinDate(new Date(member.join_date).getTime());
         }
