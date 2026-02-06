@@ -3,10 +3,15 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { Search, ArrowLeft, ArrowRight, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Search, ArrowLeft, ArrowRight, Loader2, CheckCircle2, XCircle, Lock } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+
+// 🏆 NUMERI BLOCCATI - Trophy Numbers
+const BLOCKED_NUMBERS = [1, 100000];
+
+const isBlocked = (num: number) => BLOCKED_NUMBERS.includes(num);
 
 export default function SelectNumberPage() {
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
@@ -46,7 +51,7 @@ export default function SelectNumberPage() {
   };
 
   const handleNumberClick = (number: number) => {
-    if (takenNumbers.has(number)) return;
+    if (takenNumbers.has(number) || isBlocked(number)) return;
     setSelectedNumber(number);
     setError('');
   };
@@ -58,7 +63,6 @@ export default function SelectNumberPage() {
     setError('');
 
     try {
-      // Create checkout session
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -71,7 +75,6 @@ export default function SelectNumberPage() {
         throw new Error(data.error || 'Failed to create checkout session');
       }
 
-      // Redirect to Stripe Checkout
       const stripe = await stripePromise;
       if (!stripe) throw new Error('Stripe not loaded');
 
@@ -108,8 +111,8 @@ export default function SelectNumberPage() {
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   };
 
-  const availableCount = TOTAL_NUMBERS - takenNumbers.size;
-  const progressPercentage = (takenNumbers.size / TOTAL_NUMBERS) * 100;
+  const availableCount = TOTAL_NUMBERS - takenNumbers.size - BLOCKED_NUMBERS.length;
+  const progressPercentage = ((takenNumbers.size + BLOCKED_NUMBERS.length) / TOTAL_NUMBERS) * 100;
 
   if (loading) {
     return (
@@ -183,25 +186,49 @@ export default function SelectNumberPage() {
           {getPageNumbers().map((num) => {
             const isTaken = takenNumbers.has(num);
             const isSelected = selectedNumber === num;
+            const blocked = isBlocked(num);
             
             return (
-              <button
-                key={num}
-                onClick={() => handleNumberClick(num)}
-                disabled={isTaken}
-                className={`
-                  aspect-square flex items-center justify-center text-xs font-black
-                  transition-all duration-200
-                  ${isTaken 
-                    ? 'bg-zinc-900 text-zinc-700 cursor-not-allowed border border-zinc-800' 
-                    : isSelected
-                    ? 'bg-white text-black scale-110 shadow-lg border-2 border-white'
-                    : 'bg-zinc-950 text-white hover:bg-zinc-800 border border-zinc-800 hover:border-white hover:scale-105'
-                  }
-                `}
-              >
-                {num}
-              </button>
+              <div key={num} className="relative group">
+                <button
+                  onClick={() => handleNumberClick(num)}
+                  disabled={isTaken || blocked}
+                  className={`
+                    aspect-square flex items-center justify-center text-xs font-black
+                    transition-all duration-200 relative overflow-hidden
+                    ${blocked
+                      ? 'col-span-2 row-span-2 bg-gradient-to-br from-yellow-600 via-yellow-500 to-yellow-700 text-black cursor-not-allowed border-2 border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.5)] animate-pulse'
+                      : isTaken 
+                      ? 'bg-zinc-900 text-zinc-700 cursor-not-allowed border border-zinc-800' 
+                      : isSelected
+                      ? 'bg-white text-black scale-110 shadow-lg border-2 border-white'
+                      : 'bg-zinc-950 text-white hover:bg-zinc-800 border border-zinc-800 hover:border-white hover:scale-105'
+                    }
+                  `}
+                >
+                  {blocked && (
+                    <Lock 
+                      size={num === 1 ? 20 : 24} 
+                      className="absolute top-1 right-1 opacity-50" 
+                    />
+                  )}
+                  <span className={blocked ? 'text-base' : ''}>
+                    {num}
+                  </span>
+                </button>
+                
+                {/* Tooltip per numeri bloccati */}
+                {blocked && (
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 whitespace-nowrap">
+                    <div className="bg-zinc-900 border border-yellow-600 px-3 py-2 rounded text-xs">
+                      <p className="font-bold text-yellow-500">
+                        {num === 1 ? '🏆 IL PRIMO' : '🏆 L\'ULTIMO'}
+                      </p>
+                      <p className="text-zinc-400 text-[10px]">Riservato. Non disponibile.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
