@@ -196,7 +196,7 @@ export default function SelectNumberPage() {
                     transition-all duration-200 relative overflow-hidden
                     focus:outline-none
                     ${blocked
-                      ? 'col-span-2 row-span-2 bg-gradient-to-br from-yellow-600 via-yellow-500 to-yellow-700 text-black cursor-not-allowed border-2 border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.5)] animate-pulse font-bold text-2xl'
+                      ? 'col-span-2 row-span-2 bg-gradient-to-br from-yellow-600 via-yellow-500 to-yellow-700 text-black cursor-not-allowed border-2 border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.5)] font-bold'
                       : isTaken 
                       ? 'bg-zinc-100 text-zinc-300 cursor-not-allowed border border-zinc-200' 
                       : isSelected
@@ -211,7 +211,7 @@ export default function SelectNumberPage() {
                       className="absolute top-1 right-1 opacity-50" 
                     />
                   )}
-                  <span className={blocked ? 'text-2xl font-bold' : ''}>
+                  <span className={blocked ? 'text-base font-bold' : ''}>
                     {num}
                   </span>
                 </button>
