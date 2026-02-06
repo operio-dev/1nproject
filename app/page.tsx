@@ -238,13 +238,15 @@ export default function Home() {
 
   const hasLoadedRef = useRef(false);
 
-  useEffect(() => {
+ useEffect(() => {
   if (hasLoadedRef.current) return;
   hasLoadedRef.current = true;
   
-  checkMembership(); // Controlla se loggato
-  fetchTotalMembers(); // Carica SEMPRE il conteggio
-  setDataLoaded(true);
+  loadData();
+  // ✅ Carica sempre il conteggio, anche per non loggati
+  if (!memberNumber) {
+    fetchTotalMembers();
+  }
 }, []);
 
   // ✅ NUOVO: Polling dopo pagamento completato
