@@ -520,7 +520,7 @@ export default function Home() {
         </section>
 
         <footer className="mt-32 border-t border-zinc-100 pt-16 pb-12 text-center space-y-8">
-          <img src="/logo.svg" alt="1Nothing" className="h-36 w-auto mx-auto opacity-50" />
+          <img src="/logo.svg" alt="1Nothing" className="h-50 w-auto mx-auto opacity-50" />
           <p className="text-[10px] text-zinc-400 font-mono uppercase tracking-[0.5em]">&copy; 2026 {t.footer_project}.</p>
         </footer>
       </main>
