@@ -549,7 +549,7 @@ export default function Home() {
             <p className="text-zinc-400 text-lg font-light leading-relaxed">{t.landing_desc(TOTAL_SLOTS.toLocaleString(lang === 'it' ? 'it-IT' : 'en-US'))}</p>
           </div>
           <div className="space-y-6">
-            <button onClick={handleJoinNow} className="group relative w-full bg-white text-black py-6 rounded-none font-black text-xl flex items-center justify-center gap-2 overflow-hidden hover:scale-[0.98] transition-transform active:scale-95">
+            <button onClick={handleJoinNow} className="group relative w-full bg-white text-black border border-black py-6 rounded-none font-black text-xl flex items-center justify-center gap-2 overflow-hidden hover:scale-[0.98] transition-transform active:scale-95">
               <span className="relative z-10">{t.landing_main_btn}</span>
               <ArrowUpRight className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
             </button>
