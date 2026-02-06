@@ -132,7 +132,7 @@ export default function SelectNumberPage() {
             <ArrowLeft size={14} />
             <span>Indietro</span>
           </button>
-          <div className="text-2xl font-black tracking-tighter">1N</div>
+          <img src="/logo.svg" alt="1Nothing" className="h-36 w-auto" />
         </div>
       </header>
 
