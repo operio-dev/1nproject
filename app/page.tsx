@@ -8,6 +8,23 @@ import { translations } from '@/lib/translations';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
+// Genera hash blockchain deterministico basato su email
+const generateBlockchainHash = (email: string): string => {
+  let hash = 0;
+  for (let i = 0; i < email.length; i++) {
+    hash = ((hash << 5) - hash) + email.charCodeAt(i);
+    hash = hash & hash;
+  }
+  
+  const hex = Math.abs(hash).toString(16).toUpperCase();
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const randomLetters = email.split('').slice(0, 3).map(c => 
+    letters[c.charCodeAt(0) % letters.length]
+  ).join('');
+  
+  return `${randomLetters}${hex.padStart(6, '0').slice(0, 6)}`;
+};
+
 const DashboardHome = memo(({ memberNumber, elapsedTime, totalMembers, lang }: { memberNumber: number | null, elapsedTime: CountdownTime, totalMembers: number, lang: 'it' | 'en' }) => {
   const t = translations[lang];
   const memberProgress = (totalMembers / TOTAL_SLOTS) * 100;
@@ -165,6 +182,8 @@ const CommunityTab = memo(({ lang, memberNumber }: { lang: 'it' | 'en', memberNu
 
 const ProfileTab = memo(({ onLogout, userEmail, onManageSubscription, lang }: { onLogout: () => void, userEmail: string, onManageSubscription: () => void, lang: 'it' | 'en' }) => {
   const t = translations[lang];
+  const blockchainHash = generateBlockchainHash(userEmail);
+  
   return (
     <div className="flex-1 flex flex-col justify-center items-center w-full max-w-xs mx-auto space-y-12 animate-in fade-in zoom-in duration-500 px-6 h-full text-black">
       <div className="text-center space-y-2">
@@ -174,7 +193,7 @@ const ProfileTab = memo(({ onLogout, userEmail, onManageSubscription, lang }: { 
       <div className="space-y-4 w-full">
         <button 
           onClick={onManageSubscription}
-          className="w-full py-5 bg-white text-black text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl hover:bg-zinc-50 transition-colors"
+          className="w-full py-5 bg-black text-white text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl hover:bg-zinc-800 transition-colors"
         >
           <CreditCard size={16} />
           <span>{t.profile_manage}</span>
@@ -187,7 +206,14 @@ const ProfileTab = memo(({ onLogout, userEmail, onManageSubscription, lang }: { 
           <span>{t.profile_leave}</span>
         </button>
       </div>
-      <div className="text-[9px] text-zinc-400 font-mono text-center uppercase tracking-[0.4em] pt-10">{t.profile_node}</div>
+      
+      <div className="text-center">
+        <p className="text-[9px] text-white bg-blue-600 px-3 py-1 font-mono uppercase tracking-[0.3em] inline-block">
+          PROTOCOLLATO • NODO 0X{blockchainHash}
+        </p>
+      </div>
+      
+      <div className="text-[9px] text-zinc-400 font-mono text-center uppercase tracking-[0.4em] pt-4">{t.profile_node}</div>
     </div>
   );
 });
@@ -433,7 +459,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <img src="/logo.svg" alt="1Nothing" className="h-30 w-auto" />
+        <img src="/logo.svg" alt="1Nothing" className="h-20 w-auto" />
       </div>
     );
   }
@@ -442,7 +468,7 @@ export default function Home() {
     return (
       <div className={`h-[100dvh] bg-white text-black relative flex flex-col overflow-hidden transition-opacity duration-500 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
         <header className="fixed top-0 left-0 w-full px-8 py-6 z-[60] flex justify-between items-center bg-gradient-to-b from-white to-transparent">
-          <img src="/logo.svg" alt="1Nothing" className="h-32 w-auto" />
+          <img src="/logo.svg" alt="1Nothing" className="h-16 w-auto" />
           <button onClick={() => setLang(l => l === 'it' ? 'en' : 'it')} className="text-[10px] font-black tracking-widest text-zinc-500 hover:text-white transition-colors border border-zinc-200 px-2 py-1 uppercase pointer-events-auto">
             {lang === 'it' ? 'EN' : 'IT'}
           </button>
@@ -471,7 +497,7 @@ export default function Home() {
 
       <header className="fixed top-0 left-0 w-full flex justify-between items-center px-6 py-8 z-40 bg-gradient-to-b from-white to-transparent">
         <div className="flex items-center gap-4">
-          <img src="/logo.svg" alt="1Nothing" className="h-32 w-auto" />
+          <img src="/logo.svg" alt="1Nothing" className="h-16 w-auto" />
           <button onClick={() => setLang(l => l === 'it' ? 'en' : 'it')} className="text-[10px] font-black tracking-widest text-zinc-500 hover:text-white transition-colors border border-zinc-200 px-2 py-1 uppercase">
             {lang === 'it' ? 'EN' : 'IT'}
           </button>
@@ -520,7 +546,7 @@ export default function Home() {
         </section>
 
         <footer className="mt-32 border-t border-zinc-100 pt-16 pb-12 text-center space-y-8">
-          <img src="/logo.svg" alt="1Nothing" className="h-50 w-auto mx-auto opacity-50" />
+          <img src="/logo.svg" alt="1Nothing" className="h-24 w-auto mx-auto opacity-50" />
           <p className="text-[10px] text-zinc-400 font-mono uppercase tracking-[0.5em]">&copy; 2026 {t.footer_project}.</p>
         </footer>
       </main>
