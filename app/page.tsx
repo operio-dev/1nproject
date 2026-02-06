@@ -294,16 +294,17 @@ export default function Home() {
   }, []);
 
   const loadData = async () => {
-  try {
-    await fetchTotalMembers();    // ⬅️ INVERTI L'ORDINE
-    await checkMembership();
-  } catch (error) {
-    console.error('Error loading data:', error);
-    setLoading(false);
-  } finally {
-    setDataLoaded(true);
-  }
-};
+    try {
+      // ✅ Carica SEMPRE il conteggio, anche per non loggati
+      await fetchTotalMembers();
+      await checkMembership();
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setLoading(false);
+    } finally {
+      setDataLoaded(true);
+    }
+  };
 
   const checkMembership = async () => {
     try {
@@ -347,8 +348,7 @@ export default function Home() {
   const hasAnimatedRef = useRef(false);
 
   useEffect(() => {
-    if (!dataLoaded) return;
-    
+    // ✅ Anima quando totalMembers cambia, senza aspettare dataLoaded
     if (memberNumber) {
       setCount(totalMembers);
       return;
@@ -356,6 +356,11 @@ export default function Home() {
     
     if (hasAnimatedRef.current) {
       setCount(totalMembers);
+      return;
+    }
+    
+    // Solo se totalMembers è > 0, fai l'animazione
+    if (totalMembers === 0) {
       return;
     }
     
@@ -375,7 +380,7 @@ export default function Home() {
     };
     
     requestAnimationFrame(animate);
-  }, [dataLoaded, memberNumber, totalMembers]);
+  }, [memberNumber, totalMembers]);
 
   useEffect(() => {
     const updateTimers = () => {
