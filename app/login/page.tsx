@@ -49,11 +49,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center px-6">
+    <div className="min-h-screen bg-white text-black flex items-center justify-center px-6">
       <div className="w-full max-w-sm space-y-8">
         <button 
           onClick={() => router.push('/')}
-          className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors text-sm font-black uppercase tracking-widest"
+          className="flex items-center gap-2 text-zinc-400 hover:text-black transition-colors text-sm font-black uppercase tracking-widest"
         >
           <ArrowLeft size={16} />
           <span>Indietro</span>
@@ -63,7 +63,7 @@ export default function LoginPage() {
           <h1 className="text-4xl font-black tracking-tight">
             {mode === 'login' ? 'Accedi' : 'Registrati'}
           </h1>
-          <p className="text-zinc-500 text-sm">
+          <p className="text-zinc-400 text-sm">
             {mode === 'login' 
               ? 'Entra nel Nulla' 
               : 'Unisciti ai primi 100.000'}
@@ -72,35 +72,35 @@ export default function LoginPage() {
 
         <form onSubmit={handleAuth} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block">
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block">
               Email
             </label>
             <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-none py-4 pl-12 pr-4 text-white focus:outline-none focus:border-white transition-colors"
+                className="w-full bg-zinc-50 border border-zinc-200 rounded-none py-4 pl-12 pr-4 text-black focus:outline-none focus:border-black transition-colors"
                 placeholder="tuo@email.com"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block">
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block">
               Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-none py-4 pl-12 pr-4 text-white focus:outline-none focus:border-white transition-colors"
+                className="w-full bg-zinc-50 border border-zinc-200 rounded-none py-4 pl-12 pr-4 text-black focus:outline-none focus:border-black transition-colors"
                 placeholder="••••••••"
               />
             </div>
@@ -119,7 +119,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-white text-black py-5 font-black text-sm uppercase tracking-widest hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-black text-white py-5 font-black text-sm uppercase tracking-widest hover:bg-zinc-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Caricamento...' : mode === 'login' ? 'Accedi' : 'Registrati'}
           </button>
@@ -131,7 +131,7 @@ export default function LoginPage() {
               setMode(mode === 'login' ? 'signup' : 'login');
               setMessage('');
             }}
-            className="text-sm text-zinc-500 hover:text-white transition-colors"
+            className="text-sm text-zinc-400 hover:text-black transition-colors"
           >
             {mode === 'login' 
               ? 'Non hai un account? Registrati' 
@@ -139,7 +139,7 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <div className="text-center text-[9px] text-zinc-800 uppercase tracking-[0.5em] pt-8">
+        <div className="text-center text-[9px] text-zinc-200 uppercase tracking-[0.5em] pt-8">
           &copy; 2026 1N PROJECT.
         </div>
       </div>
