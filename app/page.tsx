@@ -433,7 +433,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <img src="/logo.svg" alt="1Nothing" className="h-10 w-auto" />
+        <img src="/logo.svg" alt="1Nothing" className="h-14 w-auto" />
       </div>
     );
   }
@@ -442,7 +442,7 @@ export default function Home() {
     return (
       <div className={`h-[100dvh] bg-white text-black relative flex flex-col overflow-hidden transition-opacity duration-500 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
         <header className="fixed top-0 left-0 w-full px-8 py-6 z-[60] flex justify-between items-center bg-gradient-to-b from-white to-transparent">
-          <img src="/logo.svg" alt="1Nothing" className="h-8 w-auto" />
+          <img src="/logo.svg" alt="1Nothing" className="h-14 w-auto" />
           <button onClick={() => setLang(l => l === 'it' ? 'en' : 'it')} className="text-[10px] font-black tracking-widest text-zinc-500 hover:text-white transition-colors border border-zinc-200 px-2 py-1 uppercase pointer-events-auto">
             {lang === 'it' ? 'EN' : 'IT'}
           </button>
@@ -471,7 +471,7 @@ export default function Home() {
 
       <header className="fixed top-0 left-0 w-full flex justify-between items-center px-6 py-8 z-40 bg-gradient-to-b from-white to-transparent">
         <div className="flex items-center gap-4">
-          <img src="/logo.svg" alt="1Nothing" className="h-8 w-auto" />
+          <img src="/logo.svg" alt="1Nothing" className="h-14 w-auto" />
           <button onClick={() => setLang(l => l === 'it' ? 'en' : 'it')} className="text-[10px] font-black tracking-widest text-zinc-500 hover:text-white transition-colors border border-zinc-200 px-2 py-1 uppercase">
             {lang === 'it' ? 'EN' : 'IT'}
           </button>
