@@ -207,13 +207,12 @@ const ProfileTab = memo(({ onLogout, userEmail, onManageSubscription, lang }: { 
         </button>
       </div>
       
-      <div className="text-center">
-        <p className="text-[9px] text-white bg-blue-600 px-3 py-1 font-mono uppercase tracking-[0.3em] inline-block">
-          PROTOCOLLATO • NODO 0X{blockchainHash}
-        </p>
-      </div>
+     <div className="text-center">
+  <p className="text-[9px] text-zinc-400 font-mono uppercase tracking-[0.3em]">
+    PROTOCOLLATO • NODO 0X{blockchainHash}
+  </p>
+</div>
       
-      <div className="text-[9px] text-zinc-400 font-mono text-center uppercase tracking-[0.4em] pt-4">{t.profile_node}</div>
     </div>
   );
 });
