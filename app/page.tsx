@@ -461,7 +461,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <img src="/logo.svg" alt="1Nothing" className="h-20 w-auto" />
+        <img src="/logo.svg" alt="1Nothing" className="h-44 w-auto" />
       </div>
     );
   }
