@@ -416,18 +416,22 @@ export default function Home() {
   };
 
   const handleLogout = async () => {
-    setIsAnimating(true);
-    await supabase.auth.signOut();
-    setTimeout(() => {
-      setMemberNumber(null);
-      setMemberJoinDate(null);
-      setUserEmail('');
-      setActiveTab('home');
-      setIsAnimating(false);
-      window.location.href = '/';
-    }, 400);
-  };
-
+  setIsAnimating(true);
+  await supabase.auth.signOut();
+  setTimeout(() => {
+    setMemberNumber(null);
+    setMemberJoinDate(null);
+    setUserEmail('');
+    setActiveTab('home');
+    setIsAnimating(false);
+    
+    // ✅ Ricarica i dati prima di reindirizzare
+    fetchTotalMembers().then(() => {
+      router.push('/');
+      router.refresh();
+    });
+  }, 400);
+};
   const progressPercentage = (totalMembers / TOTAL_SLOTS) * 100;
 
   if (loading) {
