@@ -55,8 +55,8 @@ const DashboardHome = memo(({ memberNumber, elapsedTime, totalMembers, lang }: {
   return (
     <div className="flex-1 flex flex-col justify-between items-center w-full max-w-sm mx-auto pt-6 pb-28 px-6 animate-in fade-in slide-in-from-bottom-6 duration-700 h-full overflow-hidden text-black">
       <div className="bg-black text-white px-5 py-2 rounded-full shadow-2xl scale-90 sm:scale-100">
-        <span className="text-[14px] font-black tracking-tighter">
-          #{memberNumber?.toString().padStart(6, '0').replace(/(\d{3})(\d{3})/, '$1 $2')}
+        <span className="text-[18px] font-black tracking-tighter">
+          #{memberNumber}
         </span>
       </div>
 
