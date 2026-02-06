@@ -70,7 +70,9 @@ const DashboardHome = memo(({ memberNumber, elapsedTime, totalMembers, lang }: {
             <circle cx="50" cy="50" r="42" fill="transparent" stroke="#111" strokeWidth="6" />
             <circle cx="50" cy="50" r="42" fill="transparent" stroke="#FFFFFF" strokeWidth="6" strokeDasharray="264" strokeDashoffset={`${264 - (memberProgress / 100 * 264)}`} strokeLinecap="round" className="drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] transition-all duration-1000 ease-in-out" />
           </svg>
-          <span className="absolute text-[14px] font-black text-white">{Math.floor(memberProgress)}%</span>
+          <span className="absolute text-[14px] font-black text-white">
+  {memberProgress < 1 && memberProgress > 0 ? '<1%' : `${Math.floor(memberProgress)}%`}
+</span>
         </div>
         <div className="text-center">
           <div className="text-4xl font-black tracking-tighter leading-tight">{totalMembers.toLocaleString(lang === 'it' ? 'it-IT' : 'en-US')}</div>
