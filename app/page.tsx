@@ -295,18 +295,13 @@ export default function Home() {
 
   const loadData = async () => {
     try {
-      console.log('🚀 START: Loading data...');
-      // ✅ Carica SEMPRE il conteggio, anche per non loggati
       await fetchTotalMembers();
-      console.log('👤 START: Checking membership...');
       await checkMembership();
-      console.log('✅ DONE: Data loaded!');
     } catch (error) {
-      console.error('❌ ERROR loading data:', error);
+      console.error('Error loading data:', error);
       setLoading(false);
     } finally {
       setDataLoaded(true);
-      console.log('✅ dataLoaded set to true');
     }
   };
 
@@ -337,19 +332,14 @@ export default function Home() {
 
   const fetchTotalMembers = async () => {
     try {
-      console.log('🔍 START: Fetching total members...');
-      
       const { count, error } = await supabase
         .from('members')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'active');
       
-      console.log('✅ RESULT: count =', count, '| error =', error);
-      
       setTotalMembers(count || 0);
-      console.log('📊 SET totalMembers to:', count || 0);
     } catch (error) {
-      console.error('❌ ERROR fetching total members:', error);
+      console.error('Error fetching total members:', error);
       setTotalMembers(0);
     }
   };
@@ -357,28 +347,20 @@ export default function Home() {
   const hasAnimatedRef = useRef(false);
 
   useEffect(() => {
-    console.log('🎬 Animation useEffect triggered | totalMembers:', totalMembers, '| memberNumber:', memberNumber);
-    
-    // ✅ Anima quando totalMembers cambia, senza aspettare dataLoaded
     if (memberNumber) {
-      console.log('✅ User logged in, setting count directly');
       setCount(totalMembers);
       return;
     }
     
     if (hasAnimatedRef.current) {
-      console.log('✅ Already animated, setting count directly');
       setCount(totalMembers);
       return;
     }
     
-    // Solo se totalMembers è > 0, fai l'animazione
     if (totalMembers === 0) {
-      console.log('⏸️ totalMembers is 0, waiting...');
       return;
     }
     
-    console.log('🎯 Starting animation from 0 to', totalMembers);
     hasAnimatedRef.current = true;
     
     const duration = 2000;
