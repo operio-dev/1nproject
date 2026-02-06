@@ -193,26 +193,25 @@ const ProfileTab = memo(({ onLogout, userEmail, onManageSubscription, lang }: { 
       <div className="space-y-4 w-full">
         <button 
           onClick={onManageSubscription}
-          className="w-full py-5 bg-black text-white text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl hover:bg-zinc-800 transition-colors"
+          className="w-full py-5 bg-white border border-black text-black text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-black hover:text-white transition-all duration-300"
         >
           <CreditCard size={16} />
           <span>{t.profile_manage}</span>
         </button>
         <button 
           onClick={onLogout} 
-          className="w-full py-5 border border-zinc-100 text-zinc-600 text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:border-zinc-300 hover:text-zinc-400 transition-colors"
+          className="w-full py-5 bg-white border border-black text-black text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all duration-300"
         >
           <LogOut size={16} />
           <span>{t.profile_leave}</span>
         </button>
       </div>
       
-     <div className="text-center">
-  <p className="text-[9px] text-zinc-400 font-mono uppercase tracking-[0.3em]">
-    PROTOCOLLATO • NODO 0X{blockchainHash}
-  </p>
-</div>
-      
+      <div className="text-center">
+        <p className="text-[9px] text-zinc-400 font-mono uppercase tracking-[0.3em]">
+          PROTOCOLLATO • NODO 0X{blockchainHash}
+        </p>
+      </div>
     </div>
   );
 });
@@ -460,7 +459,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <img src="/logo.svg" alt="1Nothing" className="h-44 w-auto" />
+        <img src="/logo.svg" alt="1Nothing" className="h-20 w-auto" />
       </div>
     );
   }
@@ -522,7 +521,7 @@ export default function Home() {
             <p className="text-zinc-400 text-lg font-light leading-relaxed">{t.landing_desc(TOTAL_SLOTS.toLocaleString(lang === 'it' ? 'it-IT' : 'en-US'))}</p>
           </div>
           <div className="space-y-6">
-            <button onClick={handleJoinNow} className="group relative w-full bg-white text-black border border-black py-6 rounded-none font-black text-xl flex items-center justify-center gap-2 overflow-hidden hover:scale-[0.98] transition-transform active:scale-95">
+            <button onClick={handleJoinNow} className="group relative w-full bg-white text-black py-6 rounded-none font-black text-xl flex items-center justify-center gap-2 overflow-hidden hover:scale-[0.98] transition-transform active:scale-95">
               <span className="relative z-10">{t.landing_main_btn}</span>
               <ArrowUpRight className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
             </button>
