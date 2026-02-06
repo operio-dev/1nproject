@@ -44,6 +44,7 @@ export async function POST(request: Request) {
           throw new Error('Missing metadata in checkout session')
         }
 
+        // ✅ Check se member già esiste (idempotency)
         const { data: existingMember } = await supabaseAdmin
           .from('members')
           .select('member_number, user_id')
@@ -52,44 +53,13 @@ export async function POST(request: Request) {
 
         if (existingMember) {
           console.log(`Member already exists for user ${userId}, skipping creation`)
-          
-          await supabaseAdmin
-            .from('number_reservations')
-            .delete()
-            .eq('user_id', userId)
-          
           return NextResponse.json({ received: true, status: 'already_exists' })
         }
 
-        const { data: reservation } = await supabaseAdmin
-          .from('number_reservations')
-          .select('*')
-          .eq('member_number', parseInt(memberNumber))
-          .eq('user_id', userId)
-          .maybeSingle()
-
-        if (!reservation) {
-          console.error(`No valid reservation found for user ${userId}, number ${memberNumber}`)
-          
-          try {
-            await stripe.subscriptions.cancel(subscriptionId)
-            
-            const paymentIntent = session.payment_intent as string
-            if (paymentIntent) {
-              await stripe.refunds.create({
-                payment_intent: paymentIntent,
-                reason: 'requested_by_customer'
-              })
-            }
-            
-            console.log(`Refunded and cancelled subscription for user ${userId}`)
-          } catch (refundError) {
-            console.error('Failed to refund:', refundError)
-          }
-          
-          throw new Error(`Invalid reservation for number ${memberNumber}`)
-        }
-
+        // ✅ Ottieni subscription per end_date
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+        
+        // ✅ Crea member record con tutte le info
         const { error: insertError } = await supabaseAdmin
           .from('members')
           .insert({
@@ -98,71 +68,43 @@ export async function POST(request: Request) {
             member_number: parseInt(memberNumber),
             subscription_id: subscriptionId,
             status: 'active',
+            subscription_status: subscription.status,
+            subscription_end_date: new Date(subscription.current_period_end * 1000).toISOString(),
+            cancel_at_period_end: subscription.cancel_at_period_end,
             current_level: 0,
             join_date: new Date().toISOString()
           })
 
         if (insertError) {
-          console.error('Error creating member:', insertError)
-          
-          if (insertError.code === '23505') {
-            console.log(`Duplicate member detected for number ${memberNumber}`)
-            
-            try {
-              await stripe.subscriptions.cancel(subscriptionId)
-              
-              const paymentIntent = session.payment_intent as string
-              if (paymentIntent) {
-                await stripe.refunds.create({
-                  payment_intent: paymentIntent,
-                  reason: 'requested_by_customer'
-                })
-              }
-              
-              console.log(`Refunded duplicate for user ${userId}`)
-              
-            } catch (refundError) {
-              console.error('Failed to refund duplicate:', refundError)
-            }
-            
-            await supabaseAdmin
-              .from('number_reservations')
-              .delete()
-              .eq('user_id', userId)
-            
-            return NextResponse.json({ 
-              received: true, 
-              status: 'refunded_duplicate' 
-            })
-          }
-          
+          console.error('❌ Error creating member:', insertError)
           throw insertError
         }
 
+        // ✅ Rimuovi reservation se esiste
         await supabaseAdmin
           .from('number_reservations')
           .delete()
           .eq('user_id', userId)
 
-        console.log(`Member ${memberNumber} created successfully for user ${userId}`)
+        console.log(`✅ Member ${memberNumber} created successfully for user ${userId}`)
         break
       }
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object
         const subscriptionId = subscription.id
-        const status = subscription.status
-
+        
+        // ✅ Mapping completo degli status Stripe
         let memberStatus: 'active' | 'past_due' | 'expired' | 'cancelled'
         
-        switch (status) {
+        switch (subscription.status) {
           case 'active':
           case 'trialing':
             memberStatus = 'active'
             break
           case 'past_due':
           case 'unpaid':
-            memberStatus = 'past_due'
+            memberStatus = 'past_due' // Grace period
             break
           case 'canceled':
           case 'incomplete_expired':
@@ -172,17 +114,23 @@ export async function POST(request: Request) {
             memberStatus = 'expired'
         }
 
+        // ✅ Aggiorna member con tutte le info
         const { error } = await supabaseAdmin
           .from('members')
-          .update({ status: memberStatus })
+          .update({ 
+            status: memberStatus,
+            subscription_status: subscription.status,
+            subscription_end_date: new Date(subscription.current_period_end * 1000).toISOString(),
+            cancel_at_period_end: subscription.cancel_at_period_end
+          })
           .eq('subscription_id', subscriptionId)
 
         if (error) {
-          console.error('Error updating member status:', error)
+          console.error('❌ Error updating member status:', error)
           throw error
         }
 
-        console.log(`Subscription ${subscriptionId} updated to ${memberStatus}`)
+        console.log(`✅ Subscription ${subscriptionId} updated to ${memberStatus}`)
         break
       }
 
@@ -190,34 +138,60 @@ export async function POST(request: Request) {
         const subscription = event.data.object
         const subscriptionId = subscription.id
 
+        // ✅ Marca come cancelled invece di eliminare
         const { error } = await supabaseAdmin
           .from('members')
-          .update({ status: 'cancelled' })
+          .update({ 
+            status: 'cancelled',
+            subscription_status: 'canceled',
+            subscription_end_date: new Date().toISOString()
+          })
           .eq('subscription_id', subscriptionId)
 
         if (error) {
-          console.error('Error cancelling member:', error)
+          console.error('❌ Error cancelling member:', error)
           throw error
         }
 
-        console.log(`Subscription ${subscriptionId} cancelled`)
+        console.log(`✅ Subscription ${subscriptionId} cancelled - number will be freed`)
+        break
+      }
+
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object
+        const subscriptionId = invoice.subscription as string
+
+        if (!subscriptionId) break
+
+        // ✅ Marca come past_due (grace period)
+        const { error } = await supabaseAdmin
+          .from('members')
+          .update({ 
+            status: 'past_due',
+            subscription_status: 'past_due'
+          })
+          .eq('subscription_id', subscriptionId)
+
+        if (error) {
+          console.error('❌ Error updating payment failed status:', error)
+          throw error
+        }
+
+        console.log(`⚠️ Payment failed for subscription ${subscriptionId} - grace period active`)
         break
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`)
+        console.log(`ℹ️ Unhandled event type: ${event.type}`)
     }
 
     return NextResponse.json({ received: true })
 
   } catch (error: any) {
-    console.error('Webhook handler error:', error)
+    console.error('❌ Webhook handler error:', error)
     return NextResponse.json(
       { error: error.message || 'Webhook handler failed' },
       { status: 500 }
     )
   }
 }
-
-export const dynamic = 'force-dynamic'
-export const runtime = 'nodejs'
