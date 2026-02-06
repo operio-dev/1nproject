@@ -496,7 +496,7 @@ export default function Home() {
     return (
       <div className={`h-[100dvh] bg-white text-black relative flex flex-col overflow-hidden transition-opacity duration-500 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
         <header className="fixed top-0 left-0 w-full px-8 py-6 z-[60] flex justify-between items-center bg-gradient-to-b from-white to-transparent">
-          <img src="/logo.svg" alt="1Nothing" className="h-16 w-auto" />
+          <img src="/logo.svg" alt="1Nothing" className="h-32 w-auto" />
           <button onClick={() => setLang(l => l === 'it' ? 'en' : 'it')} className="text-[10px] font-black tracking-widest text-zinc-500 hover:text-white transition-colors border border-zinc-200 px-2 py-1 uppercase pointer-events-auto">
             {lang === 'it' ? 'EN' : 'IT'}
           </button>
@@ -525,7 +525,7 @@ export default function Home() {
 
       <header className="fixed top-0 left-0 w-full flex justify-between items-center px-6 py-8 z-40 bg-gradient-to-b from-white to-transparent">
         <div className="flex items-center gap-4">
-          <img src="/logo.svg" alt="1Nothing" className="h-16 w-auto" />
+          <img src="/logo.svg" alt="1Nothing" className="h-32 w-auto" />
           <button onClick={() => setLang(l => l === 'it' ? 'en' : 'it')} className="text-[10px] font-black tracking-widest text-zinc-500 hover:text-white transition-colors border border-zinc-200 px-2 py-1 uppercase">
             {lang === 'it' ? 'EN' : 'IT'}
           </button>
@@ -574,7 +574,7 @@ export default function Home() {
         </section>
 
         <footer className="mt-32 border-t border-zinc-100 pt-16 pb-12 text-center space-y-8">
-          <img src="/logo.svg" alt="1Nothing" className="h-24 w-auto mx-auto opacity-50" />
+          <img src="/logo.svg" alt="1Nothing" className="h-36 w-auto mx-auto opacity-50" />
           <p className="text-[10px] text-zinc-400 font-mono uppercase tracking-[0.5em]">&copy; 2026 {t.footer_project}.</p>
         </footer>
       </main>
