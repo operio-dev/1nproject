@@ -94,21 +94,3 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   return GET(request)
 }
-```
-
----
-
-## **✅ STRUTTURA FINALE:**
-```
-1nproject/
-├── app/
-│   ├── api/
-│   │   ├── cron/
-│   │   │   └── cleanup/
-│   │   │       └── route.ts  ⬅️ QUESTO FILE
-│   │   ├── webhook/
-│   │   │   └── route.ts
-│   │   └── ...
-│   └── page.tsx
-├── vercel.json  ⬅️ Prossimo step
-└── package.json
