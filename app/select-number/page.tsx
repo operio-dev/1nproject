@@ -8,9 +8,7 @@ import { loadStripe } from '@stripe/stripe-js';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-// 🏆 NUMERI BLOCCATI - Trophy Numbers
 const BLOCKED_NUMBERS = [1, 100000];
-
 const isBlocked = (num: number) => BLOCKED_NUMBERS.includes(num);
 
 export default function SelectNumberPage() {
@@ -116,20 +114,20 @@ export default function SelectNumberPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <Loader2 className="animate-spin" size={32} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black text-white pb-20">
+    <div className="min-h-screen bg-white text-black pb-20">
       {/* Header */}
-      <header className="fixed top-0 left-0 w-full px-6 py-8 z-40 bg-gradient-to-b from-black to-transparent">
+      <header className="fixed top-0 left-0 w-full px-6 py-8 z-40 bg-gradient-to-b from-white to-transparent">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <button 
             onClick={handleBack}
-            className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest"
+            className="flex items-center gap-2 text-zinc-400 hover:text-black transition-colors text-[10px] font-black uppercase tracking-widest"
           >
             <ArrowLeft size={14} />
             <span>Indietro</span>
@@ -139,9 +137,9 @@ export default function SelectNumberPage() {
       </header>
 
       {/* Progress Bar */}
-      <div className="fixed top-0 left-0 w-full h-[2px] bg-zinc-900 z-50">
+      <div className="fixed top-0 left-0 w-full h-[2px] bg-zinc-100 z-50">
         <div 
-          className="h-full bg-white transition-all duration-1000 ease-out" 
+          className="h-full bg-black transition-all duration-1000 ease-out" 
           style={{ width: `${progressPercentage}%` }} 
         />
       </div>
@@ -155,13 +153,13 @@ export default function SelectNumberPage() {
           <h1 className="text-4xl md:text-5xl font-black tracking-tight">
             {availableCount.toLocaleString('it-IT')} numeri disponibili
           </h1>
-          <div className="h-px w-full bg-zinc-900" />
+          <div className="h-px w-full bg-zinc-200" />
         </div>
 
         {/* Search */}
         <div className="mb-8">
           <div className="relative max-w-md">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
             <input
               type="number"
               min="1"
@@ -170,11 +168,11 @@ export default function SelectNumberPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               placeholder="Cerca un numero specifico..."
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-none py-4 pl-12 pr-24 text-white focus:outline-none focus:border-white transition-colors"
+              className="w-full bg-white border border-zinc-200 rounded-none py-4 pl-12 pr-24 text-black focus:outline-none focus:border-black transition-colors"
             />
             <button
               onClick={handleSearch}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-white text-black px-4 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-200 transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black text-white px-4 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-colors"
             >
               Cerca
             </button>
@@ -194,15 +192,15 @@ export default function SelectNumberPage() {
                   onClick={() => handleNumberClick(num)}
                   disabled={isTaken || blocked}
                   className={`
-                    aspect-square flex items-center justify-center text-xs font-black
+                    aspect-square flex items-center justify-center text-sm font-black
                     transition-all duration-200 relative overflow-hidden
                     ${blocked
                       ? 'col-span-2 row-span-2 bg-gradient-to-br from-yellow-600 via-yellow-500 to-yellow-700 text-black cursor-not-allowed border-2 border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.5)] animate-pulse'
                       : isTaken 
-                      ? 'bg-zinc-900 text-zinc-700 cursor-not-allowed border border-zinc-800' 
+                      ? 'bg-zinc-100 text-zinc-300 cursor-not-allowed border border-zinc-200' 
                       : isSelected
-                      ? 'bg-white text-black scale-110 shadow-lg border-2 border-white'
-                      : 'bg-zinc-950 text-white hover:bg-zinc-800 border border-zinc-800 hover:border-white hover:scale-105'
+                      ? 'bg-black text-white scale-110 shadow-lg border-2 border-black'
+                      : 'bg-white text-black hover:bg-zinc-50 border border-zinc-200 hover:border-black hover:scale-105'
                     }
                   `}
                 >
@@ -212,19 +210,19 @@ export default function SelectNumberPage() {
                       className="absolute top-1 right-1 opacity-50" 
                     />
                   )}
-                  <span className={blocked ? 'text-base' : ''}>
+                  <span className={blocked ? 'text-lg' : ''}>
                     {num}
                   </span>
                 </button>
                 
-                {/* Tooltip per numeri bloccati */}
+                {/* Tooltip */}
                 {blocked && (
                   <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 whitespace-nowrap">
-                    <div className="bg-zinc-900 border border-yellow-600 px-3 py-2 rounded text-xs">
-                      <p className="font-bold text-yellow-500">
+                    <div className="bg-white border border-yellow-600 px-3 py-2 rounded text-xs shadow-lg">
+                      <p className="font-bold text-yellow-600">
                         {num === 1 ? '🏆 IL PRIMO' : '🏆 L\'ULTIMO'}
                       </p>
-                      <p className="text-zinc-400 text-[10px]">Riservato. Non disponibile.</p>
+                      <p className="text-zinc-600 text-[10px]">Riservato. Non disponibile.</p>
                     </div>
                   </div>
                 )}
@@ -238,7 +236,7 @@ export default function SelectNumberPage() {
           <button
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-[10px] font-black uppercase tracking-widest"
+            className="flex items-center gap-2 text-zinc-400 hover:text-black transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-[10px] font-black uppercase tracking-widest"
           >
             <ArrowLeft size={14} />
             <span>Precedente</span>
@@ -251,16 +249,16 @@ export default function SelectNumberPage() {
           <button
             onClick={() => setCurrentPage(p => Math.min(TOTAL_PAGES, p + 1))}
             disabled={currentPage === TOTAL_PAGES}
-            className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-[10px] font-black uppercase tracking-widest"
+            className="flex items-center gap-2 text-zinc-400 hover:text-black transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-[10px] font-black uppercase tracking-widest"
           >
             <span>Successivo</span>
             <ArrowRight size={14} />
           </button>
         </div>
 
-        {/* Selected Number & Checkout */}
+        {/* Checkout */}
         {selectedNumber && (
-          <div className="fixed bottom-0 left-0 w-full bg-black/95 backdrop-blur-xl border-t border-zinc-900 p-6 z-50">
+          <div className="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-xl border-t border-zinc-200 p-6 z-50">
             <div className="max-w-4xl mx-auto space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -271,14 +269,14 @@ export default function SelectNumberPage() {
                     #{selectedNumber.toString().padStart(6, '0')}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-green-500">
+                <div className="flex items-center gap-2 text-green-600">
                   <CheckCircle2 size={20} />
                   <span className="text-sm font-black">Disponibile</span>
                 </div>
               </div>
 
               {error && (
-                <div className="flex items-center gap-2 text-red-500 bg-red-950/20 border border-red-900 px-4 py-3 text-sm">
+                <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 px-4 py-3 text-sm">
                   <XCircle size={18} />
                   <span>{error}</span>
                 </div>
@@ -287,7 +285,7 @@ export default function SelectNumberPage() {
               <button
                 onClick={handleCheckout}
                 disabled={checkoutLoading}
-                className="w-full bg-white text-black py-5 font-black text-base uppercase tracking-widest hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full bg-black text-white py-5 font-black text-base uppercase tracking-widest hover:bg-zinc-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {checkoutLoading ? (
                   <>
