@@ -294,16 +294,16 @@ export default function Home() {
   }, []);
 
   const loadData = async () => {
-    try {
-      await checkMembership();
-      await fetchTotalMembers();
-    } catch (error) {
-      console.error('Error loading data:', error);
-      setLoading(false);
-    } finally {
-      setDataLoaded(true);
-    }
-  };
+  try {
+    await fetchTotalMembers();    // ⬅️ INVERTI L'ORDINE
+    await checkMembership();
+  } catch (error) {
+    console.error('Error loading data:', error);
+    setLoading(false);
+  } finally {
+    setDataLoaded(true);
+  }
+};
 
   const checkMembership = async () => {
     try {
