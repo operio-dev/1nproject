@@ -240,30 +240,45 @@ export default function Home() {
     if (hasLoadedRef.current) return;
     hasLoadedRef.current = true;
     
+    // ✅ NON caricare se c'è ?success=true (polling lo gestirà)
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    
+    if (success === 'true') {
+      console.log('⏸️ Skipping loadData - waiting for payment polling');
+      return;
+    }
+    
     loadData();
   }, []);
 
-  // ✅ NUOVO: Polling dopo pagamento completato
+  // ✅ Polling dopo pagamento completato - USA API ROUTE
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const success = urlParams.get('success');
     const selectedNumber = urlParams.get('number');
     
     if (success === 'true' && selectedNumber) {
-      console.log('Payment successful, waiting for webhook...');
+      console.log('💳 Payment successful, waiting for webhook...');
       setLoading(true);
       
       const checkMemberCreated = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return false;
-        
-        const { data: member } = await supabase
-          .from('members')
-          .select('member_number')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        
-        return !!member;
+        try {
+          // ✅ Chiama API route che usa cookies server-side
+          const response = await fetch('/api/check-member');
+          const data = await response.json();
+          
+          if (data.success && data.member) {
+            console.log('✅ Member found:', data.member.member_number);
+            return data.member;
+          }
+          
+          console.log('⏳ Member not found yet...');
+          return null;
+        } catch (error) {
+          console.error('❌ Error checking member:', error);
+          return null;
+        }
       };
       
       let attempts = 0;
@@ -271,15 +286,27 @@ export default function Home() {
       
       const pollInterval = setInterval(async () => {
         attempts++;
-        const memberExists = await checkMemberCreated();
+        console.log(`🔄 Poll attempt ${attempts}/${maxAttempts}`);
         
-        if (memberExists) {
-          console.log('Member created! Loading dashboard...');
+        const member = await checkMemberCreated();
+        
+        if (member) {
+          console.log('🎉 Member created! Loading dashboard...');
           clearInterval(pollInterval);
-          await loadData();
+          
+          // ✅ Setta TUTTO
+          setUserEmail(member.email);
+          setMemberNumber(member.member_number);
+          setMemberJoinDate(new Date(member.join_date).getTime());
+          await fetchTotalMembers();
+          
+          setLoading(false);
+          setDataLoaded(true);
           window.history.replaceState({}, '', '/');
+          
+          console.log('✅ Dashboard should be visible now!');
         } else if (attempts >= maxAttempts) {
-          console.log('Timeout waiting for webhook');
+          console.log('⏰ Timeout waiting for webhook');
           clearInterval(pollInterval);
           await loadData();
           window.history.replaceState({}, '', '/');
@@ -520,7 +547,7 @@ export default function Home() {
   return (
     <div className={`min-h-screen bg-white text-black selection:bg-white selection:text-black transition-opacity duration-500 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
       <div className="fixed top-0 left-0 w-full h-[2px] bg-zinc-100 z-50">
-        <div className="h-full bg-white transition-all duration-1000 ease-out" style={{ width: `${progressPercentage}%` }} />
+        <div className="h-full bg-black transition-all duration-1000 ease-out" style={{ width: `${progressPercentage}%` }} />
       </div>
 
       <header className="fixed top-0 left-0 w-full flex justify-between items-center px-6 py-8 z-40 bg-gradient-to-b from-white to-transparent">
