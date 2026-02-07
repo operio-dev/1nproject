@@ -243,7 +243,7 @@ export default function Home() {
     loadData();
   }, []);
 
-  // ✅ NUOVO: Polling dopo pagamento completato
+  // ✅ Polling dopo pagamento completato
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const success = urlParams.get('success');
@@ -259,11 +259,11 @@ export default function Home() {
         
         const { data: member } = await supabase
           .from('members')
-          .select('member_number')
+          .select('member_number, join_date')
           .eq('user_id', user.id)
           .maybeSingle();
         
-        return !!member;
+        return member;
       };
       
       let attempts = 0;
@@ -271,15 +271,22 @@ export default function Home() {
       
       const pollInterval = setInterval(async () => {
         attempts++;
-        const memberExists = await checkMemberCreated();
+        const member = await checkMemberCreated();
         
-        if (memberExists) {
-          console.log('Member created! Loading dashboard...');
+        if (member) {
+          console.log('✅ Member created! Loading dashboard...');
           clearInterval(pollInterval);
-          await loadData();
+          
+          // ✅ Setta direttamente i dati del member
+          setMemberNumber(member.member_number);
+          setMemberJoinDate(new Date(member.join_date).getTime());
+          await fetchTotalMembers();
+          
+          setLoading(false);
+          setDataLoaded(true);
           window.history.replaceState({}, '', '/');
         } else if (attempts >= maxAttempts) {
-          console.log('Timeout waiting for webhook');
+          console.log('⏰ Timeout waiting for webhook');
           clearInterval(pollInterval);
           await loadData();
           window.history.replaceState({}, '', '/');
@@ -487,7 +494,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <img src="/logo.svg" alt="1Nothing" className="h-48 w-auto" />
+        <img src="/logo.svg" alt="1Nothing" className="h-20 w-auto" />
       </div>
     );
   }
@@ -496,7 +503,7 @@ export default function Home() {
     return (
       <div className={`h-[100dvh] bg-white text-black relative flex flex-col overflow-hidden transition-opacity duration-500 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
         <header className="fixed top-0 left-0 w-full px-8 py-6 z-[60] flex justify-between items-center bg-gradient-to-b from-white to-transparent">
-          <img src="/logo.svg" alt="1Nothing" className="h-32 w-auto" />
+          <img src="/logo.svg" alt="1Nothing" className="h-16 w-auto" />
           <button onClick={() => setLang(l => l === 'it' ? 'en' : 'it')} className="text-[10px] font-black tracking-widest text-zinc-500 hover:text-white transition-colors border border-zinc-200 px-2 py-1 uppercase pointer-events-auto">
             {lang === 'it' ? 'EN' : 'IT'}
           </button>
@@ -525,7 +532,7 @@ export default function Home() {
 
       <header className="fixed top-0 left-0 w-full flex justify-between items-center px-6 py-8 z-40 bg-gradient-to-b from-white to-transparent">
         <div className="flex items-center gap-4">
-          <img src="/logo.svg" alt="1Nothing" className="h-32 w-auto" />
+          <img src="/logo.svg" alt="1Nothing" className="h-16 w-auto" />
           <button onClick={() => setLang(l => l === 'it' ? 'en' : 'it')} className="text-[10px] font-black tracking-widest text-zinc-500 hover:text-white transition-colors border border-zinc-200 px-2 py-1 uppercase">
             {lang === 'it' ? 'EN' : 'IT'}
           </button>
@@ -549,7 +556,7 @@ export default function Home() {
             <p className="text-zinc-400 text-lg font-light leading-relaxed">{t.landing_desc(TOTAL_SLOTS.toLocaleString(lang === 'it' ? 'it-IT' : 'en-US'))}</p>
           </div>
           <div className="space-y-6">
-            <button onClick={handleJoinNow} className="group relative w-full bg-white text-black border border-black py-6 rounded-none font-black text-xl flex items-center justify-center gap-2 overflow-hidden hover:scale-[0.98] transition-transform active:scale-95">
+            <button onClick={handleJoinNow} className="group relative w-full bg-white text-black py-6 rounded-none font-black text-xl flex items-center justify-center gap-2 overflow-hidden hover:scale-[0.98] transition-transform active:scale-95">
               <span className="relative z-10">{t.landing_main_btn}</span>
               <ArrowUpRight className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
             </button>
@@ -574,7 +581,7 @@ export default function Home() {
         </section>
 
         <footer className="mt-32 border-t border-zinc-100 pt-16 pb-12 text-center space-y-8">
-          <img src="/logo.svg" alt="1Nothing" className="h-36 w-auto mx-auto opacity-50" />
+          <img src="/logo.svg" alt="1Nothing" className="h-24 w-auto mx-auto opacity-50" />
           <p className="text-[10px] text-zinc-400 font-mono uppercase tracking-[0.5em]">&copy; 2026 {t.footer_project}.</p>
         </footer>
       </main>
