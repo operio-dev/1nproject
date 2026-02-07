@@ -317,7 +317,7 @@ export default function Home() {
           clearInterval(pollInterval);
           await loadData();
           window.history.replaceState({}, '', '/');
-          alert('Pagamento completato! Se non vedi subito il tuo numero, ricarica la pagina tra qualche secondo.');
+          alert('Pagamento completato e numero assegnato con successo! Se non lo vedi subito, ricarica la pagina tra qualche secondo.');
         }
       }, 2000);
       
