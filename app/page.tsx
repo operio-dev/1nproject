@@ -320,14 +320,20 @@ export default function Home() {
           // ✅ Aspetta che totalMembers venga caricato
           await fetchTotalMembers();
           
-          // ✅ SOLO DOPO mostra dashboard
-          setIsPolling(false);
-          setLoading(false);
-          setDataLoaded(true);
-          window.history.replaceState({}, '', '/');
-          
-          console.log('✅ Dashboard should be visible now!');
-          console.log('Member:', member.member_number, 'Email:', member.email);
+          // ✅ Aspetta un tick per assicurarsi che React abbia aggiornato lo stato
+          setTimeout(() => {
+            setIsPolling(false);
+            setLoading(false);
+            setDataLoaded(true);
+            window.history.replaceState({}, '', '/');
+            
+            console.log('✅ Dashboard should be visible now!');
+            console.log('Final state:', { 
+              memberNumber: member.member_number, 
+              email: member.email,
+              loading: false 
+            });
+          }, 100);
         } else if (attempts >= maxAttempts) {
           console.log('⏰ Timeout waiting for webhook');
           clearInterval(pollInterval);
