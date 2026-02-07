@@ -6,9 +6,46 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   try {
-    const supabase = await createClient()
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('user_id')
     
-    // ✅ Usa cookies server-side per ottenere user
+    // ✅ Se c'è user_id nell'URL, usalo direttamente (bypass cookies)
+    if (userId) {
+      const supabase = await createClient()
+      
+      const { data: member, error: memberError } = await supabase
+        .from('members')
+        .select('member_number, join_date, email')
+        .eq('user_id', userId)
+        .maybeSingle()
+
+      if (memberError) {
+        console.error('Error fetching member:', memberError)
+        return NextResponse.json({ 
+          success: false, 
+          error: memberError.message 
+        }, { status: 500 })
+      }
+
+      if (member) {
+        return NextResponse.json({
+          success: true,
+          member: {
+            member_number: member.member_number,
+            join_date: member.join_date,
+            email: member.email
+          }
+        })
+      }
+
+      return NextResponse.json({
+        success: false,
+        error: 'Member not found yet'
+      })
+    }
+    
+    // ✅ Fallback: prova con cookies (per compatibilità)
+    const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     if (authError || !user) {
@@ -18,7 +55,6 @@ export async function GET(request: Request) {
       }, { status: 401 })
     }
 
-    // ✅ Controlla se member esiste
     const { data: member, error: memberError } = await supabase
       .from('members')
       .select('member_number, join_date, email')
