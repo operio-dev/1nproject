@@ -265,7 +265,12 @@ export default function Home() {
     const urlParams = new URLSearchParams(window.location.search);
     const success = urlParams.get('success');
     const selectedNumber = urlParams.get('number');
-    const userId = urlParams.get('user_id'); // ✅ Potrebbe essere null
+    const userId = urlParams.get('user_id');
+    
+    console.log('🚀 Polling useEffect triggered!');
+    console.log('🔎 Current URL:', window.location.href);
+    console.log('🔎 URL Search params:', window.location.search);
+    console.log('🔎 Parsed params:', { success, selectedNumber, userId });
     
     if (success === 'true' && selectedNumber) {
       console.log('💳 Payment successful, waiting for webhook...');
