@@ -240,6 +240,15 @@ export default function Home() {
     if (hasLoadedRef.current) return;
     hasLoadedRef.current = true;
     
+    // ✅ NON caricare se c'è ?success=true (polling lo gestirà)
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    
+    if (success === 'true') {
+      console.log('⏸️ Skipping loadData - waiting for payment polling');
+      return;
+    }
+    
     loadData();
   }, []);
 
@@ -250,12 +259,17 @@ export default function Home() {
     const selectedNumber = urlParams.get('number');
     
     if (success === 'true' && selectedNumber) {
-      console.log('Payment successful, waiting for webhook...');
+      console.log('💳 Payment successful, waiting for webhook...');
       setLoading(true);
       
       const checkMemberCreated = async () => {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return false;
+        if (!user) {
+          console.log('❌ No user found');
+          return null;
+        }
+        
+        console.log('✅ User found:', user.email);
         
         const { data: member } = await supabase
           .from('members')
@@ -263,7 +277,13 @@ export default function Home() {
           .eq('user_id', user.id)
           .maybeSingle();
         
-        return member;
+        if (member) {
+          console.log('✅ Member found:', member.member_number);
+          return { member, email: user.email };
+        }
+        
+        console.log('⏳ Member not found yet...');
+        return null;
       };
       
       let attempts = 0;
@@ -271,20 +291,25 @@ export default function Home() {
       
       const pollInterval = setInterval(async () => {
         attempts++;
-        const member = await checkMemberCreated();
+        console.log(`🔄 Poll attempt ${attempts}/${maxAttempts}`);
         
-        if (member) {
-          console.log('✅ Member created! Loading dashboard...');
+        const result = await checkMemberCreated();
+        
+        if (result) {
+          console.log('🎉 Member created! Loading dashboard...');
           clearInterval(pollInterval);
           
-          // ✅ Setta direttamente i dati del member
-          setMemberNumber(member.member_number);
-          setMemberJoinDate(new Date(member.join_date).getTime());
+          // ✅ Setta TUTTO
+          setUserEmail(result.email || '');
+          setMemberNumber(result.member.member_number);
+          setMemberJoinDate(new Date(result.member.join_date).getTime());
           await fetchTotalMembers();
           
           setLoading(false);
           setDataLoaded(true);
           window.history.replaceState({}, '', '/');
+          
+          console.log('✅ Dashboard should be visible now!');
         } else if (attempts >= maxAttempts) {
           console.log('⏰ Timeout waiting for webhook');
           clearInterval(pollInterval);
