@@ -260,23 +260,31 @@ export default function Home() {
     loadData();
   }, []);
 
-  // ✅ Polling dopo pagamento completato - USA API ROUTE con user_id
+  // ✅ Polling dopo pagamento completato
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const success = urlParams.get('success');
     const selectedNumber = urlParams.get('number');
-    const userId = urlParams.get('user_id'); // ✅ Ottieni user_id dall'URL
+    const userId = urlParams.get('user_id'); // ✅ Potrebbe essere null
     
-    if (success === 'true' && selectedNumber && userId) {
+    if (success === 'true' && selectedNumber) {
       console.log('💳 Payment successful, waiting for webhook...');
+      console.log('🔍 URL params:', { success, selectedNumber, userId });
       setLoading(true);
-      setIsPolling(true); // ✅ Attiva stato polling
+      setIsPolling(true);
       
       const checkMemberCreated = async () => {
         try {
-          // ✅ Passa user_id come query param (bypass cookies!)
-          const response = await fetch(`/api/check-member?user_id=${userId}`);
+          // ✅ Se c'è user_id, usalo; altrimenti prova senza (cookies)
+          const url = userId 
+            ? `/api/check-member?user_id=${userId}`
+            : `/api/check-member`;
+          
+          console.log('📡 Calling:', url);
+          const response = await fetch(url);
           const data = await response.json();
+          
+          console.log('📥 Response:', data);
           
           if (data.success && data.member) {
             console.log('✅ Member found:', data.member.member_number);
