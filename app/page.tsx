@@ -230,6 +230,13 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [isPolling, setIsPolling] = useState(false); // ✅ NUOVO: stato polling
+  
+  // ✅ FORCE RERENDER quando memberNumber cambia dopo polling
+  useEffect(() => {
+    if (memberNumber && !loading) {
+      console.log('🔄 Forcing rerender - memberNumber:', memberNumber);
+    }
+  }, [memberNumber, loading]);
 
   const router = useRouter();
   const supabase = createClient();
@@ -253,21 +260,22 @@ export default function Home() {
     loadData();
   }, []);
 
-  // ✅ Polling dopo pagamento completato - USA API ROUTE
+  // ✅ Polling dopo pagamento completato - USA API ROUTE con user_id
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const success = urlParams.get('success');
     const selectedNumber = urlParams.get('number');
+    const userId = urlParams.get('user_id'); // ✅ Ottieni user_id dall'URL
     
-    if (success === 'true' && selectedNumber) {
+    if (success === 'true' && selectedNumber && userId) {
       console.log('💳 Payment successful, waiting for webhook...');
       setLoading(true);
       setIsPolling(true); // ✅ Attiva stato polling
       
       const checkMemberCreated = async () => {
         try {
-          // ✅ Chiama API route che usa cookies server-side
-          const response = await fetch('/api/check-member');
+          // ✅ Passa user_id come query param (bypass cookies!)
+          const response = await fetch(`/api/check-member?user_id=${userId}`);
           const data = await response.json();
           
           if (data.success && data.member) {
@@ -317,7 +325,7 @@ export default function Home() {
           clearInterval(pollInterval);
           await loadData();
           window.history.replaceState({}, '', '/');
-          alert('Pagamento completato e numero assegnato con successo! Se non lo vedi subito, ricarica la pagina tra qualche secondo.');
+          alert('Pagamento completato! Se non vedi subito il tuo numero, ricarica la pagina tra qualche secondo.');
         }
       }, 2000);
       
@@ -517,6 +525,14 @@ export default function Home() {
   };
 
   const progressPercentage = (totalMembers / TOTAL_SLOTS) * 100;
+
+  // ✅ DEBUG: vedi stato prima del render
+  console.log('🔍 Render state:', { 
+    loading, 
+    memberNumber, 
+    userEmail, 
+    isPolling 
+  });
 
   if (loading) {
     return (
