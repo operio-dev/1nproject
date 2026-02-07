@@ -229,6 +229,7 @@ export default function Home() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [isPolling, setIsPolling] = useState(false); // ✅ NUOVO: stato polling
 
   const router = useRouter();
   const supabase = createClient();
@@ -261,6 +262,7 @@ export default function Home() {
     if (success === 'true' && selectedNumber) {
       console.log('💳 Payment successful, waiting for webhook...');
       setLoading(true);
+      setIsPolling(true); // ✅ Attiva stato polling
       
       const checkMemberCreated = async () => {
         try {
@@ -294,17 +296,22 @@ export default function Home() {
           console.log('🎉 Member created! Loading dashboard...');
           clearInterval(pollInterval);
           
-          // ✅ Setta TUTTO
+          // ✅ Setta TUTTO in ordine
           setUserEmail(member.email);
           setMemberNumber(member.member_number);
           setMemberJoinDate(new Date(member.join_date).getTime());
+          
+          // ✅ Aspetta che totalMembers venga caricato
           await fetchTotalMembers();
           
+          // ✅ SOLO DOPO mostra dashboard
+          setIsPolling(false);
           setLoading(false);
           setDataLoaded(true);
           window.history.replaceState({}, '', '/');
           
           console.log('✅ Dashboard should be visible now!');
+          console.log('Member:', member.member_number, 'Email:', member.email);
         } else if (attempts >= maxAttempts) {
           console.log('⏰ Timeout waiting for webhook');
           clearInterval(pollInterval);
@@ -513,8 +520,26 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <img src="/logo.svg" alt="1Nothing" className="h-48 w-auto" />
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-8 px-6">
+        <img 
+          src="/logo.svg" 
+          alt="1Nothing" 
+          className={`h-48 w-auto ${isPolling ? 'animate-pulse' : ''}`} 
+        />
+        {isPolling && (
+          <div className="text-center space-y-4">
+            <p className="text-lg font-black tracking-tight">
+              Conferma pagamento in corso...
+            </p>
+            <p className="text-sm text-zinc-500 max-w-xs">
+              Non chiudere la pagina, ci vorranno ancora pochi secondi
+            </p>
+            {/* Barra di caricamento animata */}
+            <div className="w-64 h-1 bg-zinc-100 rounded-full overflow-hidden">
+              <div className="h-full bg-black rounded-full animate-[loading_2s_ease-in-out_infinite]" />
+            </div>
+          </div>
+        )}
       </div>
     );
   }
