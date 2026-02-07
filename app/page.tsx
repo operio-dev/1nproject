@@ -529,7 +529,7 @@ export default function Home() {
         {isPolling && (
           <div className="text-center space-y-4">
             <p className="text-lg font-black tracking-tight">
-              Conferma pagamento in corso...
+              Assegnazione del tuo numero unico nel nulla...
             </p>
             <p className="text-sm text-zinc-500 max-w-xs">
               Non chiudere la pagina, ci vorranno ancora pochi secondi
