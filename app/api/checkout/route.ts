@@ -62,7 +62,7 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}?success=true&number=${selectedNumber}`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}?success=true&number=${selectedNumber}&user_id=${user.id}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/select-number?canceled=true`,
       client_reference_id: user.id,
       metadata: {
