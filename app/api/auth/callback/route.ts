@@ -18,7 +18,7 @@ export async function GET(request: Request) {
       const redirectPath = '/select-number'
       
       if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}${redirectPath}`)
+       return NextResponse.redirect(`${origin}${redirectPath}`)
       } else if (forwardedHost) {
         return NextResponse.redirect(`https://${forwardedHost}${redirectPath}`)
       } else {
