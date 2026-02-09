@@ -1,27 +1,41 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
   
-  if (code) {
-    const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    
-    if (!error) {
-      // ✅ ASPETTA che i cookies siano settati
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      console.log('Session created:', session?.user?.email)
-      
-      // ✅ POI redirect
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://1nothing.vercel.app'
-      return NextResponse.redirect(`${baseUrl}/select-number`)
-    }
+  console.log('=== CALLBACK START ===')
+  console.log('Code received:', code ? 'YES' : 'NO')
+  
+  if (!code) {
+    console.log('No code, going to error')
+    return NextResponse.redirect('https://1nothing.vercel.app/auth/auth-code-error')
   }
   
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://1nothing.vercel.app'
-  return NextResponse.redirect(`${baseUrl}/auth/auth-code-error`)
+  try {
+    const supabase = await createClient()
+    console.log('Supabase client created')
+    
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    
+    console.log('Exchange result:', {
+      hasData: !!data,
+      hasError: !!error,
+      errorMessage: error?.message,
+      errorStatus: error?.status
+    })
+    
+    if (error) {
+      console.log('ERROR from Supabase:', error)
+      return NextResponse.redirect('https://1nothing.vercel.app/auth/auth-code-error')
+    }
+    
+    console.log('Success! Redirecting to select-number')
+    return NextResponse.redirect('https://1nothing.vercel.app/select-number')
+    
+  } catch (err: any) {
+    console.log('CATCH ERROR:', err.message)
+    return NextResponse.redirect('https://1nothing.vercel.app/auth/auth-code-error')
+  }
 }
