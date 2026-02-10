@@ -54,7 +54,6 @@ export default function SelectNumberPage() {
     setError('');
   };
 
-  // --- LOGICA BLINDATA AGGIUNTA QUI ---
   const handleCheckout = async () => {
     if (!selectedNumber) return;
     
@@ -62,21 +61,6 @@ export default function SelectNumberPage() {
     setError('');
 
     try {
-      // 1. Controllo "Atomico" nel DB prima di mandare a Stripe
-      // Usiamo la RPC select_member_number che abbiamo creato nel punto 2
-      const { error: rpcError } = await supabase.rpc('select_member_number', { 
-        target_number: selectedNumber 
-      });
-
-      if (rpcError) {
-        // Se il numero è stato preso un istante prima o l'utente ha già un numero
-        if (rpcError.message.includes('unique_member_number')) {
-          throw new Error("Troppo tardi! Questo numero è stato appena assegnato. Scegline un altro.");
-        }
-        throw new Error(rpcError.message);
-      }
-
-      // 2. Se il DB ha confermato (numero riservato temporaneamente o assegnato), procedi a Stripe
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -86,24 +70,22 @@ export default function SelectNumberPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Errore nella creazione della sessione di pagamento');
+        throw new Error(data.error || 'Failed to create checkout session');
       }
 
       const stripe = await stripePromise;
-      if (!stripe) throw new Error('Stripe non caricato correttamente');
+      if (!stripe) throw new Error('Stripe not loaded');
 
       const { error: stripeError } = await stripe.redirectToCheckout({
         sessionId: data.sessionId,
       });
 
-      if (stripeError) throw stripeError;
-
+      if (stripeError) {
+        throw stripeError;
+      }
     } catch (err: any) {
       console.error('Checkout error:', err);
-      setError(err.message || 'Si è verificato un errore durante la procedura');
-      
-      // Se il numero era già preso, aggiorniamo la lista locale per l'utente
-      fetchTakenNumbers();
+      setError(err.message || 'Errore durante il checkout');
       setCheckoutLoading(false);
     }
   };
@@ -133,22 +115,15 @@ export default function SelectNumberPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="animate-spin text-black" size={32} />
+        <Loader2 className="animate-spin" size={32} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white text-black pb-40">
-      {/* Progress Bar */}
-      <div className="fixed top-0 left-0 w-full h-[2px] bg-zinc-100 z-50">
-        <div 
-          className="h-full bg-black transition-all duration-1000 ease-out" 
-          style={{ width: `${progressPercentage}%` }} 
-        />
-      </div>
-
-      <header className="fixed top-0 left-0 w-full px-6 py-8 z-40 bg-white/80 backdrop-blur-md">
+    <div className="min-h-screen bg-white text-black pb-20">
+      {/* Header */}
+      <header className="fixed top-0 left-0 w-full px-6 py-8 z-40 bg-gradient-to-b from-white to-transparent">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <button 
             onClick={handleBack}
@@ -157,14 +132,23 @@ export default function SelectNumberPage() {
             <ArrowLeft size={14} />
             <span>Indietro</span>
           </button>
-          <div className="font-black text-xl tracking-tighter">1NOTHING</div>
+          <img src="/logo.svg" alt="1Nothing" className="h-36 w-auto" />
         </div>
       </header>
 
-      <main className="pt-40 px-6 max-w-4xl mx-auto">
+      {/* Progress Bar */}
+      <div className="fixed top-0 left-0 w-full h-[2px] bg-zinc-100 z-50">
+        <div 
+          className="h-full bg-black transition-all duration-1000 ease-out" 
+          style={{ width: `${progressPercentage}%` }} 
+        />
+      </div>
+
+      <main className="pt-32 px-6 max-w-4xl mx-auto">
+        {/* Title */}
         <div className="space-y-4 mb-12">
           <div className="text-zinc-500 text-[10px] uppercase tracking-[0.3em] font-black">
-            Scegli il tuo posto nel Nulla
+            Scegli il tuo numero
           </div>
           <h1 className="text-4xl md:text-5xl font-black tracking-tight">
             {availableCount.toLocaleString('it-IT')} numeri disponibili
@@ -173,20 +157,22 @@ export default function SelectNumberPage() {
         </div>
 
         {/* Search */}
-        <div className="mb-12">
+        <div className="mb-8">
           <div className="relative max-w-md">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
             <input
               type="number"
+              min="1"
+              max={TOTAL_NUMBERS}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="Cerca un numero..."
-              className="w-full bg-white border border-zinc-200 rounded-none py-4 pl-12 pr-24 text-black focus:border-black transition-colors"
+              placeholder="Cerca un numero specifico..."
+              className="w-full bg-white border border-zinc-200 rounded-none py-4 pl-12 pr-24 text-black focus:outline-none focus:border-black transition-colors"
             />
             <button
               onClick={handleSearch}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black text-white px-4 py-2 text-[10px] font-black uppercase tracking-widest"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black text-white px-4 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-colors"
             >
               Cerca
             </button>
@@ -206,81 +192,111 @@ export default function SelectNumberPage() {
                   onClick={() => handleNumberClick(num)}
                   disabled={isTaken || blocked}
                   className={`
-                    w-full aspect-square flex items-center justify-center text-sm
-                    transition-all duration-200 relative
+                    w-full aspect-square flex items-center justify-center text-lg
+                    transition-all duration-200 relative overflow-hidden
+                    focus:outline-none
                     ${blocked
-                      ? 'bg-zinc-900 text-yellow-500 cursor-not-allowed border-2 border-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.3)]'
+                      ? 'col-span-2 row-span-2 bg-gradient-to-br from-yellow-600 via-yellow-500 to-yellow-700 text-black cursor-not-allowed border-2 border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.5)] font-bold'
                       : isTaken 
-                      ? 'bg-zinc-50 text-zinc-200 cursor-not-allowed border border-zinc-100' 
+                      ? 'bg-zinc-100 text-zinc-300 cursor-not-allowed border border-zinc-200' 
                       : isSelected
-                      ? 'bg-black text-white scale-110 z-10 shadow-2xl border-2 border-black font-black'
-                      : 'bg-white text-zinc-400 hover:text-black border border-zinc-200 hover:border-black hover:z-10'
+                      ? 'bg-black text-white scale-105 shadow-xl border border-black'
+                      : 'bg-white text-black hover:bg-zinc-50 border border-zinc-200 hover:border-black hover:scale-105'
                     }
                   `}
                 >
-                  {blocked && <Lock size={12} className="absolute top-1 right-1" />}
-                  {num}
+                  {blocked && (
+                    <Lock 
+                      size={num === 1 ? 20 : 24} 
+                      className="absolute top-1 right-1 opacity-50" 
+                    />
+                  )}
+                  <span className={blocked ? 'text-base font-bold' : ''}>
+                    {num}
+                  </span>
                 </button>
+                
+                {/* Tooltip */}
+                {blocked && (
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 whitespace-nowrap">
+                    <div className="bg-white border border-yellow-600 px-3 py-2 rounded text-xs shadow-lg">
+                      <p className="font-bold text-yellow-600">
+                        {num === 1 ? '🏆 IL PRIMO' : '🏆 L\'ULTIMO'}
+                      </p>
+                      <p className="text-zinc-600 text-[10px]">Riservato. Non disponibile.</p>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between mb-20">
+        <div className="flex items-center justify-between mb-12">
           <button
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="flex items-center gap-2 text-zinc-400 hover:text-black disabled:opacity-20 uppercase font-black text-[10px] tracking-widest"
+            className="flex items-center gap-2 text-zinc-400 hover:text-black transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-[10px] font-black uppercase tracking-widest"
           >
-            <ArrowLeft size={14} /> Precedente
+            <ArrowLeft size={14} />
+            <span>Precedente</span>
           </button>
-          <div className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest">
-            Pagina {currentPage} / {TOTAL_PAGES}
+          
+          <div className="text-zinc-400 text-sm">
+            Pagina {currentPage} di {TOTAL_PAGES.toLocaleString('it-IT')}
           </div>
+          
           <button
             onClick={() => setCurrentPage(p => Math.min(TOTAL_PAGES, p + 1))}
             disabled={currentPage === TOTAL_PAGES}
-            className="flex items-center gap-2 text-zinc-400 hover:text-black disabled:opacity-20 uppercase font-black text-[10px] tracking-widest"
+            className="flex items-center gap-2 text-zinc-400 hover:text-black transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-[10px] font-black uppercase tracking-widest"
           >
-            Successivo <ArrowRight size={14} />
+            <span>Successivo</span>
+            <ArrowRight size={14} />
           </button>
         </div>
 
-        {/* Floating Checkout Bar */}
+        {/* Checkout */}
         {selectedNumber && (
-          <div className="fixed bottom-0 left-0 w-full bg-white border-t border-zinc-200 p-6 z-50 animate-in slide-in-from-bottom duration-500">
-            <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-6">
+          <div className="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-xl border-t border-zinc-200 p-6 z-50">
+            <div className="max-w-4xl mx-auto space-y-4">
+              <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-[10px] text-zinc-400 uppercase tracking-widest font-black mb-1">Hai selezionato</div>
-                  <div className="text-3xl font-black tracking-tighter italic">#{selectedNumber}</div>
+                  <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-black mb-1">
+                    Numero selezionato
+                  </div>
+                  <div className="text-3xl font-black tracking-tight">
+                    #{selectedNumber.toString().padStart(6, '0')}
+                  </div>
                 </div>
-                <div className="h-10 w-px bg-zinc-100 hidden md:block" />
                 <div className="flex items-center gap-2 text-green-600">
-                  <CheckCircle2 size={18} />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Disponibile ora</span>
+                  <CheckCircle2 size={20} />
+                  <span className="text-sm font-black">Disponibile</span>
                 </div>
               </div>
 
-              <div className="w-full md:w-auto flex flex-col gap-2">
-                {error && (
-                  <div className="flex items-center gap-2 text-red-600 text-[10px] font-bold uppercase bg-red-50 p-2 border border-red-100">
-                    <XCircle size={14} /> {error}
-                  </div>
+              {error && (
+                <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 px-4 py-3 text-sm">
+                  <XCircle size={18} />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <button
+                onClick={handleCheckout}
+                disabled={checkoutLoading}
+                className="w-full bg-black text-white py-5 font-black text-base uppercase tracking-widest hover:bg-zinc-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {checkoutLoading ? (
+                  <>
+                    <Loader2 className="animate-spin" size={20} />
+                    <span>Caricamento...</span>
+                  </>
+                ) : (
+                  <span>Conferma e paga 0,99€/mese</span>
                 )}
-                <button
-                  onClick={handleCheckout}
-                  disabled={checkoutLoading}
-                  className="bg-black text-white px-12 py-5 font-black uppercase tracking-[0.2em] text-xs hover:bg-zinc-800 transition-all flex items-center justify-center gap-3 disabled:bg-zinc-400"
-                >
-                  {checkoutLoading ? (
-                    <Loader2 className="animate-spin" size={16} />
-                  ) : (
-                    "Conferma e Sottoscrivi"
-                  )}
-                </button>
-              </div>
+              </button>
             </div>
           </div>
         )}
