@@ -44,33 +44,49 @@ export async function POST(request: Request) {
           throw new Error('Missing metadata in checkout session')
         }
 
-        // 🟢 MODIFICATO: Ottieni subscription per date e status
+        // ✅ Check se member già esiste (idempotency)
+        const { data: existingMember } = await supabaseAdmin
+          .from('members')
+          .select('member_number, user_id')
+          .eq('user_id', userId)
+          .maybeSingle()
+
+        if (existingMember) {
+          console.log(`Member already exists for user ${userId}, skipping creation`)
+          return NextResponse.json({ received: true, status: 'already_exists' })
+        }
+
+        // ✅ Ottieni subscription per end_date
         const subscription = await stripe.subscriptions.retrieve(subscriptionId)
         
-        // 🟢 MODIFICATO: Invece di INSERT, facciamo UPDATE.
-        // L'RPC ha già creato il record come 'pending'. Ora lo confermiamo.
-        const { error: updateError } = await supabaseAdmin
+        // ✅ Crea member record con tutte le info
+        const { error: insertError } = await supabaseAdmin
           .from('members')
-          .update({
+          .insert({
+            user_id: userId,
             email: email,
+            member_number: parseInt(memberNumber),
             subscription_id: subscriptionId,
-            status: 'active', // Da 'pending' passa ad 'active'
-            payment_status: 'confirmed', // 🟢 La colonna che hai aggiunto tu!
+            status: 'active',
             subscription_status: subscription.status,
             subscription_end_date: new Date(subscription.current_period_end * 1000).toISOString(),
             cancel_at_period_end: subscription.cancel_at_period_end,
             current_level: 0,
             join_date: new Date().toISOString()
           })
-          .eq('user_id', userId)
-          .eq('member_number', parseInt(memberNumber))
 
-        if (updateError) {
-          console.error('❌ Error confirming member payment:', updateError)
-          throw updateError
+        if (insertError) {
+          console.error('❌ Error creating member:', insertError)
+          throw insertError
         }
 
-        console.log(`✅ Member ${memberNumber} confirmed successfully for user ${userId}`)
+        // ✅ Rimuovi reservation se esiste
+        await supabaseAdmin
+          .from('number_reservations')
+          .delete()
+          .eq('user_id', userId)
+
+        console.log(`✅ Member ${memberNumber} created successfully for user ${userId}`)
         break
       }
 
@@ -78,6 +94,7 @@ export async function POST(request: Request) {
         const subscription = event.data.object
         const subscriptionId = subscription.id
         
+        // ✅ Mapping completo degli status Stripe
         let memberStatus: 'active' | 'past_due' | 'expired' | 'cancelled'
         
         switch (subscription.status) {
@@ -87,7 +104,7 @@ export async function POST(request: Request) {
             break
           case 'past_due':
           case 'unpaid':
-            memberStatus = 'past_due'
+            memberStatus = 'past_due' // Grace period
             break
           case 'canceled':
           case 'incomplete_expired':
@@ -97,6 +114,7 @@ export async function POST(request: Request) {
             memberStatus = 'expired'
         }
 
+        // ✅ Aggiorna member con tutte le info
         const { error } = await supabaseAdmin
           .from('members')
           .update({ 
@@ -111,6 +129,8 @@ export async function POST(request: Request) {
           console.error('❌ Error updating member status:', error)
           throw error
         }
+
+        console.log(`✅ Subscription ${subscriptionId} updated to ${memberStatus}`)
         break
       }
 
@@ -118,19 +138,46 @@ export async function POST(request: Request) {
         const subscription = event.data.object
         const subscriptionId = subscription.id
 
-        // 🟢 MODIFICATO: Se la sottoscrizione viene eliminata, liberiamo il numero!
-        // Cancelliamo il record così il numero torna disponibile nella griglia
+        // ✅ Marca come cancelled invece di eliminare
         const { error } = await supabaseAdmin
           .from('members')
-          .delete()
+          .update({ 
+            status: 'cancelled',
+            subscription_status: 'canceled',
+            subscription_end_date: new Date().toISOString()
+          })
           .eq('subscription_id', subscriptionId)
 
         if (error) {
-          console.error('❌ Error deleting/freeing member:', error)
+          console.error('❌ Error cancelling member:', error)
           throw error
         }
 
-        console.log(`✅ Subscription ${subscriptionId} deleted - number is now FREE`)
+        console.log(`✅ Subscription ${subscriptionId} cancelled - number will be freed`)
+        break
+      }
+
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object
+        const subscriptionId = invoice.subscription as string
+
+        if (!subscriptionId) break
+
+        // ✅ Marca come past_due (grace period)
+        const { error } = await supabaseAdmin
+          .from('members')
+          .update({ 
+            status: 'past_due',
+            subscription_status: 'past_due'
+          })
+          .eq('subscription_id', subscriptionId)
+
+        if (error) {
+          console.error('❌ Error updating payment failed status:', error)
+          throw error
+        }
+
+        console.log(`⚠️ Payment failed for subscription ${subscriptionId} - grace period active`)
         break
       }
 
