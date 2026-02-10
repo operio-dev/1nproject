@@ -6,7 +6,7 @@ export async function POST(request: Request) {
   try {
     const supabase = await createClient()
     
-    // 1. Controllo Autenticazione
+    // Check if user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     if (authError || !user) {
@@ -19,24 +19,40 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid number selection' }, { status: 400 })
     }
 
-    // 2. 🟢 LOGICA BLINDATA: Chiamiamo la RPC che abbiamo creato
-    // Questa funzione crea già il record in 'members' con status 'pending'
-    // Se il numero è già preso (anche come pending), restituirà un errore qui.
-    const { error: rpcError } = await supabase.rpc('select_member_number', { 
-      target_number: selectedNumber 
-    })
+    // Check both members and reservations
+    const [existingMember, existingReservation] = await Promise.all([
+      supabase
+        .from('members')
+        .select('member_number')
+        .eq('member_number', selectedNumber)
+        .maybeSingle(),
+      supabase
+        .from('number_reservations')
+        .select('member_number')
+        .eq('member_number', selectedNumber)
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle()
+    ])
 
-    if (rpcError) {
-      console.error('RPC Reservation failed:', rpcError)
-      // Se l'errore è dovuto al numero già preso (Unique Constraint)
-      if (rpcError.message.includes('unique_member_number')) {
-        return NextResponse.json({ error: 'Numero appena preso, scegline un altro' }, { status: 409 })
-      }
-      return NextResponse.json({ error: rpcError.message }, { status: 409 })
+    if (existingMember.data || existingReservation.data) {
+      return NextResponse.json({ error: 'Number already taken' }, { status: 409 })
     }
 
-    // 3. Creazione Sessione Stripe
-    // Passiamo i metadata necessari affinché il Webhook sappia chi confermare
+    // Reserve the number BEFORE creating checkout
+    const { error: reservationError } = await supabase
+      .from('number_reservations')
+      .insert({
+        member_number: selectedNumber,
+        user_id: user.id,
+        expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString()
+      })
+
+    if (reservationError) {
+      console.error('Reservation failed:', reservationError)
+      return NextResponse.json({ error: 'Number just taken, please choose another' }, { status: 409 })
+    }
+
+    // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
@@ -46,7 +62,7 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success?number=${selectedNumber}`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}?success=true&number=${selectedNumber}&user_id=${user.id}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/select-number?canceled=true`,
       client_reference_id: user.id,
       metadata: {
@@ -62,7 +78,13 @@ export async function POST(request: Request) {
       },
     })
 
-    // Restituiamo il sessionId al frontend
+    // Save checkout_session_id in reservation
+    await supabase
+      .from('number_reservations')
+      .update({ checkout_session_id: session.id })
+      .eq('member_number', selectedNumber)
+      .eq('user_id', user.id)
+
     return NextResponse.json({ sessionId: session.id, url: session.url })
 
   } catch (error: any) {
