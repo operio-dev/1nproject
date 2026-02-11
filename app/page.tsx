@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, memo } from 'react';
 import { Lock, User, Users, ArrowUpRight, LogOut, CreditCard, Flame, Star, Home as HomeIcon, UserCircle, Send } from 'lucide-react';
-import { TOTAL_SLOTS, MOCK_STATEMENTS } from '@/lib/constants';
+import { TOTAL_SLOTS } from '@/lib/constants';
 import { CountdownTime } from '@/lib/types';
 import { translations } from '@/lib/translations';
 import { createClient } from '@/lib/supabase/client';
@@ -99,40 +99,110 @@ const DashboardHome = memo(({ memberNumber, elapsedTime, totalMembers, lang }: {
   );
 });
 
+// ✅ CHAT REAL-TIME CON SUPABASE
 const CommunityTab = memo(({ lang, memberNumber }: { lang: 'it' | 'en', memberNumber: number | null }) => {
   const t = translations[lang];
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const supabase = createClient();
   
-  type ChatMessage = {
-    id: number;
-    number: string;
-    text: string;
-  };
+  interface Message {
+    id: string;
+    user_id: string;
+    member_number: number;
+    message: string;
+    created_at: string;
+  }
   
   const [inputMessage, setInputMessage] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>(
-    MOCK_STATEMENTS.map((msg, idx) => ({
-      id: msg.id,
-      number: msg.number.toString().padStart(6, '0'),
-      text: t.mock_statements[idx % t.mock_statements.length]
-    }))
-  );
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
+  // Scroll automatico
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSendMessage = () => {
-    if (!inputMessage.trim()) return;
-    
-    const newMessage: ChatMessage = {
-      id: Date.now(),
-      number: memberNumber?.toString().padStart(6, '0') || '000000',
-      text: inputMessage
+  // Get current user
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
     };
-    
-    setMessages(prev => [...prev, newMessage]);
-    setInputMessage('');
+    getCurrentUser();
+  }, []);
+
+  // Carica messaggi esistenti
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+
+  const fetchMessages = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .order('created_at', { ascending: true })
+        .limit(100);
+
+      if (error) throw error;
+      setMessages(data || []);
+    } catch (err) {
+      console.error('Error fetching messages:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ REALTIME: Subscribe a nuovi messaggi
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    const channel = supabase
+      .channel('messages-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages'
+        },
+        (payload) => {
+          console.log('📨 Nuovo messaggio!', payload.new);
+          setMessages(prev => [...prev, payload.new as Message]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUserId]);
+
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || !currentUserId || !memberNumber) return;
+
+    setSending(true);
+
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          user_id: currentUserId,
+          member_number: memberNumber,
+          message: inputMessage.trim()
+        });
+
+      if (error) throw error;
+
+      setInputMessage('');
+    } catch (err) {
+      console.error('Error sending message:', err);
+      alert('Errore durante invio messaggio');
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -142,18 +212,40 @@ const CommunityTab = memo(({ lang, memberNumber }: { lang: 'it' | 'en', memberNu
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full w-full max-w-md mx-auto animate-in fade-in slide-in-from-right-6 duration-500 overflow-hidden text-black">
       <div className="flex-1 overflow-y-auto px-4 pt-6 pb-4 no-scrollbar overscroll-contain scroll-smooth">
         <div className="space-y-4">
-          {messages.map((msg) => (
-            <div key={msg.id} className="flex flex-col items-start space-y-1 max-w-[85%]">
-              <div className="bg-zinc-100 text-black px-4 py-3 rounded-2xl text-[14px] font-medium shadow-sm leading-snug">
-                <span className="font-bold text-[9px] block opacity-30 mb-1 tracking-widest uppercase">#{msg.number}</span>
-                {msg.text}
-              </div>
+          {messages.length === 0 ? (
+            <div className="text-center text-zinc-400 py-12 text-sm">
+              {lang === 'it' ? 'Nessun messaggio. Inizia la conversazione!' : 'No messages yet. Start the conversation!'}
             </div>
-          ))}
+          ) : (
+            messages.map((msg) => (
+              <div key={msg.id} className="flex flex-col items-start space-y-1 max-w-[85%]">
+                <div className="bg-zinc-100 text-black px-4 py-3 rounded-2xl text-[14px] font-medium shadow-sm leading-snug">
+                  <span className="font-bold text-[9px] block opacity-30 mb-1 tracking-widest uppercase">
+                    #{msg.member_number.toString().padStart(6, '0')}
+                  </span>
+                  {msg.message}
+                  <div className="text-[9px] mt-1 opacity-30">
+                    {new Date(msg.created_at).toLocaleTimeString(lang === 'it' ? 'it-IT' : 'en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
           <div ref={chatEndRef} className="h-4" />
         </div>
       </div>
@@ -164,12 +256,13 @@ const CommunityTab = memo(({ lang, memberNumber }: { lang: 'it' | 'en', memberNu
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
+            disabled={sending}
             placeholder={t.comm_placeholder} 
-            className="w-full bg-zinc-100 border border-zinc-200 rounded-full py-4 px-6 text-[15px] focus:outline-none focus:border-black/20 transition-all pr-14 placeholder:text-zinc-300 text-black" 
+            className="w-full bg-zinc-100 border border-zinc-200 rounded-full py-4 px-6 text-[15px] focus:outline-none focus:border-black/20 transition-all pr-14 placeholder:text-zinc-300 text-black disabled:opacity-50" 
           />
           <button 
             onClick={handleSendMessage}
-            disabled={!inputMessage.trim()}
+            disabled={sending || !inputMessage.trim()}
             className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white text-black rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send size={18} fill="black" />
@@ -229,9 +322,8 @@ export default function Home() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [dataLoaded, setDataLoaded] = useState(false);
-  const [isPolling, setIsPolling] = useState(false); // ✅ NUOVO: stato polling
+  const [isPolling, setIsPolling] = useState(false);
   
-  // ✅ FORCE RERENDER quando memberNumber cambia dopo polling
   useEffect(() => {
     if (memberNumber && !loading) {
       console.log('🔄 Forcing rerender - memberNumber:', memberNumber);
@@ -248,7 +340,6 @@ export default function Home() {
     if (hasLoadedRef.current) return;
     hasLoadedRef.current = true;
     
-    // ✅ NON caricare se c'è ?success=true (polling lo gestirà)
     const urlParams = new URLSearchParams(window.location.search);
     const success = urlParams.get('success');
     
@@ -260,43 +351,29 @@ export default function Home() {
     loadData();
   }, []);
 
-  // ✅ Polling dopo pagamento completato
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const success = urlParams.get('success');
     const selectedNumber = urlParams.get('number');
     const userId = urlParams.get('user_id');
     
-    console.log('🚀 Polling useEffect triggered!');
-    console.log('🔎 Current URL:', window.location.href);
-    console.log('🔎 URL Search params:', window.location.search);
-    console.log('🔎 Parsed params:', { success, selectedNumber, userId });
-    
     if (success === 'true' && selectedNumber) {
-      console.log('💳 Payment successful, waiting for webhook...');
-      console.log('🔍 URL params:', { success, selectedNumber, userId });
       setLoading(true);
       setIsPolling(true);
       
       const checkMemberCreated = async () => {
         try {
-          // ✅ Se c'è user_id, usalo; altrimenti prova senza (cookies)
           const url = userId 
             ? `/api/check-member?user_id=${userId}`
             : `/api/check-member`;
           
-          console.log('📡 Calling:', url);
           const response = await fetch(url);
           const data = await response.json();
           
-          console.log('📥 Response:', data);
-          
           if (data.success && data.member) {
-            console.log('✅ Member found:', data.member.member_number);
             return data.member;
           }
           
-          console.log('⏳ Member not found yet...');
           return null;
         } catch (error) {
           console.error('❌ Error checking member:', error);
@@ -309,38 +386,25 @@ export default function Home() {
       
       const pollInterval = setInterval(async () => {
         attempts++;
-        console.log(`🔄 Poll attempt ${attempts}/${maxAttempts}`);
         
         const member = await checkMemberCreated();
         
         if (member) {
-          console.log('🎉 Member created! Loading dashboard...');
           clearInterval(pollInterval);
           
-          // ✅ Setta TUTTO in ordine
           setUserEmail(member.email);
           setMemberNumber(member.member_number);
           setMemberJoinDate(new Date(member.join_date).getTime());
           
-          // ✅ Aspetta che totalMembers venga caricato
           await fetchTotalMembers();
           
-          // ✅ Aspetta un tick per assicurarsi che React abbia aggiornato lo stato
           setTimeout(() => {
             setIsPolling(false);
             setLoading(false);
             setDataLoaded(true);
             window.history.replaceState({}, '', '/');
-            
-            console.log('✅ Dashboard should be visible now!');
-            console.log('Final state:', { 
-              memberNumber: member.member_number, 
-              email: member.email,
-              loading: false 
-            });
           }, 100);
         } else if (attempts >= maxAttempts) {
-          console.log('⏰ Timeout waiting for webhook');
           clearInterval(pollInterval);
           await loadData();
           window.history.replaceState({}, '', '/');
@@ -378,9 +442,7 @@ export default function Home() {
           .maybeSingle();
         
         if (member) {
-          // ✅ CHECK: Se abbonamento scaduto o cancellato → blocca accesso
           if (member.status === 'cancelled' || member.status === 'expired') {
-            console.log('⚠️ Subscription expired/cancelled - redirecting to landing');
             await supabase.auth.signOut();
             setMemberNumber(null);
             setMemberJoinDate(null);
@@ -389,13 +451,11 @@ export default function Home() {
             return;
           }
           
-          // ✅ CHECK: Se subscription_end_date passata → blocca accesso
           if (member.subscription_end_date) {
             const endDate = new Date(member.subscription_end_date).getTime();
             const now = new Date().getTime();
             
             if (now > endDate && member.status !== 'active') {
-              console.log('⚠️ Subscription period ended - redirecting to landing');
               await supabase.auth.signOut();
               setMemberNumber(null);
               setMemberJoinDate(null);
@@ -405,7 +465,6 @@ export default function Home() {
             }
           }
           
-          // ✅ Abbonamento valido → mostra dashboard
           setMemberNumber(member.member_number);
           setMemberJoinDate(new Date(member.join_date).getTime());
         }
@@ -545,14 +604,6 @@ export default function Home() {
 
   const progressPercentage = (totalMembers / TOTAL_SLOTS) * 100;
 
-  // ✅ DEBUG: vedi stato prima del render
-  console.log('🔍 Render state:', { 
-    loading, 
-    memberNumber, 
-    userEmail, 
-    isPolling 
-  });
-
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-8 px-6">
@@ -569,7 +620,6 @@ export default function Home() {
             <p className="text-sm text-zinc-500 max-w-xs">
               Non chiudere la pagina, ci vorranno ancora pochi secondi
             </p>
-            {/* Barra di caricamento animata */}
             <div className="w-64 h-1 bg-zinc-100 rounded-full overflow-hidden">
               <div className="h-full bg-black rounded-full animate-[loading_2s_ease-in-out_infinite]" />
             </div>
