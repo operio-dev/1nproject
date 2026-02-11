@@ -221,8 +221,8 @@ const CommunityTab = memo(({ lang, memberNumber }: { lang: 'it' | 'en', memberNu
   }
 
   return (
-    <div className="flex flex-col h-full w-full max-w-md mx-auto animate-in fade-in slide-in-from-right-6 duration-500 overflow-hidden text-black">
-      <div className="flex-1 overflow-y-auto px-4 pt-6 pb-4 no-scrollbar overscroll-contain scroll-smooth">
+    <div className="flex flex-col h-full w-full max-w-md mx-auto animate-in fade-in slide-in-from-right-6 duration-500 overflow-hidden text-black pb-24">
+      <div className="flex-1 overflow-y-auto px-4 pt-6 pb-32 no-scrollbar overscroll-contain scroll-smooth">
         <div className="space-y-4">
           {messages.length === 0 ? (
             <div className="text-center text-zinc-400 py-12 text-sm">
@@ -249,7 +249,7 @@ const CommunityTab = memo(({ lang, memberNumber }: { lang: 'it' | 'en', memberNu
           <div ref={chatEndRef} className="h-4" />
         </div>
       </div>
-      <div className="flex-none w-full px-6 py-4 bg-white border-t border-zinc-100 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.1)]">
+      <div className="fixed bottom-[calc(5rem)] left-0 right-0 w-full px-6 py-4 bg-white border-t border-zinc-100 z-30 shadow-[0_-10px_20px_rgba(0,0,0,0.1)]">
         <div className="w-full max-w-sm mx-auto relative group">
           <input 
             type="text" 
