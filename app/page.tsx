@@ -233,7 +233,7 @@ const CommunityTab = memo(({ lang, memberNumber }: { lang: 'it' | 'en', memberNu
               <div key={msg.id} className="flex flex-col items-start space-y-1 max-w-[85%]">
                 <div className="bg-zinc-100 text-black px-4 py-3 rounded-2xl text-[14px] font-medium shadow-sm leading-snug">
                   <span className="font-bold text-[9px] block opacity-30 mb-1 tracking-widest uppercase">
-                    #{msg.member_number.toString().padStart(6, '0')}
+                    #{msg.member_number}
                   </span>
                   {msg.message}
                   <div className="text-[9px] mt-1 opacity-30">
