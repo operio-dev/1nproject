@@ -19,6 +19,8 @@ export default function SelectNumberPage() {
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [error, setError] = useState('');
+  const [availabilityChecking, setAvailabilityChecking] = useState(false);
+  const [availabilityStatus, setAvailabilityStatus] = useState<'available' | 'taken' | null>(null);
   
   const router = useRouter();
   const supabase = createClient();
@@ -48,14 +50,46 @@ export default function SelectNumberPage() {
     }
   };
 
-  const handleNumberClick = (number: number) => {
-    if (takenNumbers.has(number) || isBlocked(number)) return;
+  const checkNumberAvailability = async (number: number) => {
+    setAvailabilityChecking(true);
+    setAvailabilityStatus(null);
+    
+    try {
+      const { data, error } = await supabase
+        .from('members')
+        .select('member_number')
+        .eq('member_number', number)
+        .maybeSingle();
+      
+      if (error) throw error;
+      
+      setAvailabilityStatus(data ? 'taken' : 'available');
+    } catch (err) {
+      console.error('Error checking availability:', err);
+      setAvailabilityStatus('available'); // Default to available on error
+    } finally {
+      setAvailabilityChecking(false);
+    }
+  };
+
+  const handleNumberClick = async (number: number) => {
+    if (isBlocked(number)) return;
+    
     setSelectedNumber(number);
     setError('');
+    
+    // Check availability in real-time
+    await checkNumberAvailability(number);
   };
 
   const handleCheckout = async () => {
     if (!selectedNumber) return;
+    
+    // Final check before checkout
+    if (availabilityStatus === 'taken') {
+      setError('Questo numero è stato appena preso! Scegline un altro.');
+      return;
+    }
     
     setCheckoutLoading(true);
     setError('');
@@ -95,7 +129,7 @@ export default function SelectNumberPage() {
     if (num >= 1 && num <= TOTAL_NUMBERS) {
       const page = Math.ceil(num / NUMBERS_PER_PAGE);
       setCurrentPage(page);
-      setSelectedNumber(num);
+      handleNumberClick(num);
     }
   };
 
@@ -132,7 +166,7 @@ export default function SelectNumberPage() {
             <ArrowLeft size={14} />
             <span>Indietro</span>
           </button>
-          <img src="/logo.svg" alt="1Nothing" className="h-36 w-auto" />
+          <div className="text-2xl font-black tracking-tighter">1N</div>
         </div>
       </header>
 
@@ -144,7 +178,7 @@ export default function SelectNumberPage() {
         />
       </div>
 
-      <main className="pt-32 px-6 max-w-4xl mx-auto">
+      <main className="pt-32 px-6 max-w-4xl mx-auto pb-40">
         {/* Title */}
         <div className="space-y-4 mb-12">
           <div className="text-zinc-500 text-[10px] uppercase tracking-[0.3em] font-black">
@@ -270,9 +304,23 @@ export default function SelectNumberPage() {
                     #{selectedNumber.toString().padStart(6, '0')}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-green-600">
-                  <CheckCircle2 size={20} />
-                  <span className="text-sm font-black">Disponibile</span>
+                <div className="flex items-center gap-2">
+                  {availabilityChecking ? (
+                    <>
+                      <Loader2 className="animate-spin text-zinc-400" size={20} />
+                      <span className="text-sm font-black text-zinc-400">Controllo...</span>
+                    </>
+                  ) : availabilityStatus === 'available' ? (
+                    <>
+                      <CheckCircle2 size={20} className="text-green-600" />
+                      <span className="text-sm font-black text-green-600">Disponibile</span>
+                    </>
+                  ) : availabilityStatus === 'taken' ? (
+                    <>
+                      <XCircle size={20} className="text-red-600" />
+                      <span className="text-sm font-black text-red-600">Già preso</span>
+                    </>
+                  ) : null}
                 </div>
               </div>
 
@@ -285,7 +333,7 @@ export default function SelectNumberPage() {
 
               <button
                 onClick={handleCheckout}
-                disabled={checkoutLoading}
+                disabled={checkoutLoading || availabilityStatus === 'taken' || availabilityChecking}
                 className="w-full bg-black text-white py-5 font-black text-base uppercase tracking-widest hover:bg-zinc-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {checkoutLoading ? (
