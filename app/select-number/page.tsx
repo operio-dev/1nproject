@@ -19,8 +19,6 @@ export default function SelectNumberPage() {
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [error, setError] = useState('');
-  const [availabilityChecking, setAvailabilityChecking] = useState(false);
-  const [availabilityStatus, setAvailabilityStatus] = useState<'available' | 'taken' | null>(null);
   
   const router = useRouter();
   const supabase = createClient();
@@ -39,55 +37,36 @@ export default function SelectNumberPage() {
         .from('members')
         .select('member_number');
       
-      if (error) throw error;
-      
-      const taken = new Set(data.map(m => m.member_number));
-      setTakenNumbers(taken);
+      if (error) {
+        console.error('Error fetching taken numbers:', error);
+        setTakenNumbers(new Set());
+      } else {
+        const taken = new Set(data?.map(m => m.member_number) || []);
+        setTakenNumbers(taken);
+        console.log('Taken numbers:', taken.size, Array.from(taken));
+      }
     } catch (err) {
       console.error('Error fetching taken numbers:', err);
+      setTakenNumbers(new Set());
     } finally {
       setLoading(false);
     }
   };
 
-  const checkNumberAvailability = async (number: number) => {
-    setAvailabilityChecking(true);
-    setAvailabilityStatus(null);
-    
-    try {
-      const { data, error } = await supabase
-        .from('members')
-        .select('member_number')
-        .eq('member_number', number)
-        .maybeSingle();
-      
-      if (error) throw error;
-      
-      setAvailabilityStatus(data ? 'taken' : 'available');
-    } catch (err) {
-      console.error('Error checking availability:', err);
-      setAvailabilityStatus('available'); // Default to available on error
-    } finally {
-      setAvailabilityChecking(false);
-    }
-  };
-
-  const handleNumberClick = async (number: number) => {
-    if (isBlocked(number)) return;
+  const handleNumberClick = (number: number) => {
+    if (takenNumbers.has(number) || isBlocked(number)) return;
     
     setSelectedNumber(number);
     setError('');
-    
-    // Check availability in real-time
-    await checkNumberAvailability(number);
   };
 
   const handleCheckout = async () => {
     if (!selectedNumber) return;
     
-    // Final check before checkout
-    if (availabilityStatus === 'taken') {
+    // Double-check availability before checkout
+    if (takenNumbers.has(selectedNumber)) {
       setError('Questo numero è stato appena preso! Scegline un altro.');
+      setSelectedNumber(null);
       return;
     }
     
@@ -104,6 +83,13 @@ export default function SelectNumberPage() {
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 409) {
+          setError('Questo numero è stato appena preso! Scegline un altro.');
+          setSelectedNumber(null);
+          await fetchTakenNumbers(); // Refresh the list
+          setCheckoutLoading(false);
+          return;
+        }
         throw new Error(data.error || 'Failed to create checkout session');
       }
 
@@ -129,7 +115,7 @@ export default function SelectNumberPage() {
     if (num >= 1 && num <= TOTAL_NUMBERS) {
       const page = Math.ceil(num / NUMBERS_PER_PAGE);
       setCurrentPage(page);
-      handleNumberClick(num);
+      setSelectedNumber(num);
     }
   };
 
@@ -292,7 +278,7 @@ export default function SelectNumberPage() {
         </div>
 
         {/* Checkout */}
-        {selectedNumber && (
+        {selectedNumber && !takenNumbers.has(selectedNumber) && !isBlocked(selectedNumber) && (
           <div className="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-xl border-t border-zinc-200 p-6 z-50">
             <div className="max-w-4xl mx-auto space-y-4">
               <div className="flex items-center justify-between">
@@ -304,23 +290,9 @@ export default function SelectNumberPage() {
                     #{selectedNumber.toString().padStart(6, '0')}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {availabilityChecking ? (
-                    <>
-                      <Loader2 className="animate-spin text-zinc-400" size={20} />
-                      <span className="text-sm font-black text-zinc-400">Controllo...</span>
-                    </>
-                  ) : availabilityStatus === 'available' ? (
-                    <>
-                      <CheckCircle2 size={20} className="text-green-600" />
-                      <span className="text-sm font-black text-green-600">Disponibile</span>
-                    </>
-                  ) : availabilityStatus === 'taken' ? (
-                    <>
-                      <XCircle size={20} className="text-red-600" />
-                      <span className="text-sm font-black text-red-600">Già preso</span>
-                    </>
-                  ) : null}
+                <div className="flex items-center gap-2 text-green-600">
+                  <CheckCircle2 size={20} />
+                  <span className="text-sm font-black">Disponibile</span>
                 </div>
               </div>
 
@@ -333,7 +305,7 @@ export default function SelectNumberPage() {
 
               <button
                 onClick={handleCheckout}
-                disabled={checkoutLoading || availabilityStatus === 'taken' || availabilityChecking}
+                disabled={checkoutLoading}
                 className="w-full bg-black text-white py-5 font-black text-base uppercase tracking-widest hover:bg-zinc-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {checkoutLoading ? (
