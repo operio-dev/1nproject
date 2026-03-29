@@ -54,6 +54,11 @@ export async function POST(request: Request) {
           member_number: selectedNumber.toString(),
         },
       },
+      custom_text: {
+        submit: {
+          message: "Il tuo numero #" + selectedNumber.toString().padStart(6, '0') + " sarà riservato istantaneamente"
+        }
+      },
     })
 
     return NextResponse.json({ sessionId: session.id, url: session.url })
