@@ -54,34 +54,47 @@ export async function middleware(request: NextRequest) {
     }
   )
 
+  // Recuperiamo l'utente
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Protected route: /select-number requires authentication
+  // --- LOGICA DI PROTEZIONE ROTTE ---
+
+  // Se l'utente prova ad accedere a /select-number
   if (request.nextUrl.pathname.startsWith('/select-number')) {
+    // Se NON è loggato, rimandalo al login
     if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url))
+      const loginUrl = new URL('/login', request.url)
+      // Aggiungiamo un parametro per debugging (opzionale)
+      loginUrl.searchParams.set('from', 'middleware-protected')
+      return NextResponse.redirect(loginUrl)
     }
     
-    // If user already has a member number, redirect to home (dashboard)
+    // Se è loggato, controlliamo se ha già un numero assegnato (se è già membro)
     const { data: member } = await supabase
       .from('members')
       .select('member_number')
       .eq('user_id', user.id)
       .maybeSingle()
 
-    if (member) {
+    // Se esiste già un numero, significa che ha già pagato/scelto: rimandalo alla home
+    if (member?.member_number) {
       return NextResponse.redirect(new URL('/', request.url))
     }
   }
 
-  // If logged in user visits root, stay on root (they see dashboard if member, landing if not)
-  // No automatic redirects to /select-number
+  // Se un utente loggato prova ad andare al login, rimandalo alla home (opzionale ma pulito)
+  if (request.nextUrl.pathname === '/login' && user) {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
 
   return response
 }
 
 export const config = {
   matcher: [
+    /*
+     * Escludiamo i file statici e le rotte che non devono passare dal middleware
+     */
     '/((?!_next/static|_next/image|favicon.ico|auth/callback|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
