@@ -336,29 +336,22 @@ export default function Home() {
 
   const hasLoadedRef = useRef(false);
 
-  useEffect(() => {
-    if (hasLoadedRef.current) return;
-    hasLoadedRef.current = true;
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    const success = urlParams.get('success');
-    
-    if (success === 'true') {
-      console.log('⏸️ Skipping loadData - waiting for payment polling');
-      return;
-    }
-    
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const success = urlParams.get('success');
+useEffect(() => {
+  if (hasLoadedRef.current) return;
+  hasLoadedRef.current = true;
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  const success = urlParams.get('success');
+  
+  // ✅ FIX: Anche se c'è success=true, carica i dati normalmente
+  loadData();
+  
+  // Se c'è success, fa il polling MA in parallelo
+  if (success === 'true') {
     const selectedNumber = urlParams.get('number');
     const userId = urlParams.get('user_id');
     
-    if (success === 'true' && selectedNumber) {
-      setLoading(true);
+    if (selectedNumber) {
       setIsPolling(true);
       
       const checkMemberCreated = async () => {
@@ -382,7 +375,7 @@ export default function Home() {
       };
       
       let attempts = 0;
-      const maxAttempts = 15;
+      const maxAttempts = 10;
       
       const pollInterval = setInterval(async () => {
         attempts++;
@@ -392,6 +385,7 @@ export default function Home() {
         if (member) {
           clearInterval(pollInterval);
           
+          // Aggiorna i dati del membro
           setUserEmail(member.email);
           setMemberNumber(member.member_number);
           setMemberJoinDate(new Date(member.join_date).getTime());
@@ -406,15 +400,15 @@ export default function Home() {
           }, 100);
         } else if (attempts >= maxAttempts) {
           clearInterval(pollInterval);
+          setIsPolling(false);
+          // Ricarica dati normalmente
           await loadData();
           window.history.replaceState({}, '', '/');
-          alert('Pagamento completato! Se non vedi subito il tuo numero, ricarica la pagina tra qualche secondo.');
         }
       }, 2000);
-      
-      return () => clearInterval(pollInterval);
     }
-  }, []);
+  }
+}, []);
 
   const loadData = async () => {
     try {
