@@ -35,7 +35,7 @@ export default function LoginPage() {
         });
         
         if (error) throw error;
-        setMessage('Controlla la tua email per confermare la registrazione');
+        setMessage('Controlla la tua email per confermare la registrazione. Se non la trovi, controlla in spam.');
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
