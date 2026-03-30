@@ -87,6 +87,49 @@ export async function POST(request: Request) {
           .eq('user_id', userId)
 
         console.log(`✅ Member ${memberNumber} created successfully for user ${userId}`)
+
+        // 📧 --- INVIO EMAIL DI BENVENUTO (RESEND) ---
+        try {
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              from: '1Nothing <noreply@1nothing.qzz.io>',
+              to: email,
+              subject: `Reserved: Member #${memberNumber.toString().padStart(4, '0')}`,
+              html: `
+                <!DOCTYPE html>
+                <html>
+                <body style="font-family: sans-serif; background-color: #ffffff; color: #000000; margin: 0; padding: 0;">
+                  <div style="max-width: 600px; margin: 0 auto; padding: 60px 20px; text-align: center;">
+                    <h1 style="font-size: 22px; letter-spacing: 4px; margin-bottom: 40px; text-transform: uppercase; color: #000000;">1NOTHING PROJECT</h1>
+                    <p style="font-size: 16px; margin-bottom: 10px; color: #000000;">Your spot has been reserved.</p>
+                    <p style="font-size: 16px; margin-bottom: 40px; color: #000000;">You are officially part of the nothing.</p>
+                    
+                    <div style="font-size: 72px; font-weight: bold; border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 30px 0; margin: 40px 0; letter-spacing: -2px; color: #000000;">
+                      #${memberNumber.toString().padStart(4, '0')}
+                    </div>
+                    
+                    <p style="font-size: 14px; color: #666666; margin-bottom: 60px;">Keep this number. It is your only trace.</p>
+                    
+                    <footer style="font-size: 11px; color: #999999; letter-spacing: 2px; text-transform: uppercase;">
+                      © ${new Date().getFullYear()} 1NOTHING.QZZ.IO — NOTHING IS FOREVER.
+                    </footer>
+                  </div>
+                </body>
+                </html>
+              `
+            })
+          });
+          console.log(`📧 Welcome email sent to ${email}`);
+        } catch (emailError) {
+          console.error("❌ Error sending welcome email:", emailError);
+          // Non blocchiamo il webhook se l'email fallisce
+        }
+
         break
       }
 
@@ -94,7 +137,6 @@ export async function POST(request: Request) {
         const subscription = event.data.object
         const subscriptionId = subscription.id
         
-        // ✅ Mapping completo degli status Stripe
         let memberStatus: 'active' | 'past_due' | 'expired' | 'cancelled'
         
         switch (subscription.status) {
@@ -104,7 +146,7 @@ export async function POST(request: Request) {
             break
           case 'past_due':
           case 'unpaid':
-            memberStatus = 'past_due' // Grace period
+            memberStatus = 'past_due'
             break
           case 'canceled':
           case 'incomplete_expired':
@@ -114,7 +156,6 @@ export async function POST(request: Request) {
             memberStatus = 'expired'
         }
 
-        // ✅ Aggiorna member con tutte le info
         const { error } = await supabaseAdmin
           .from('members')
           .update({ 
@@ -138,7 +179,6 @@ export async function POST(request: Request) {
         const subscription = event.data.object
         const subscriptionId = subscription.id
 
-        // ✅ Marca come cancelled invece di eliminare
         const { error } = await supabaseAdmin
           .from('members')
           .update({ 
@@ -153,7 +193,7 @@ export async function POST(request: Request) {
           throw error
         }
 
-        console.log(`✅ Subscription ${subscriptionId} cancelled - number will be freed`)
+        console.log(`✅ Subscription ${subscriptionId} cancelled`)
         break
       }
 
@@ -163,7 +203,6 @@ export async function POST(request: Request) {
 
         if (!subscriptionId) break
 
-        // ✅ Marca come past_due (grace period)
         const { error } = await supabaseAdmin
           .from('members')
           .update({ 
@@ -177,7 +216,7 @@ export async function POST(request: Request) {
           throw error
         }
 
-        console.log(`⚠️ Payment failed for subscription ${subscriptionId} - grace period active`)
+        console.log(`⚠️ Payment failed for subscription ${subscriptionId}`)
         break
       }
 
