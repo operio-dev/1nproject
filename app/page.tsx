@@ -181,29 +181,29 @@ const CommunityTab = memo(({ lang, memberNumber }: { lang: 'it' | 'en', memberNu
   }, [currentUserId]);
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim() || !currentUserId || !memberNumber) return;
+  if (!inputMessage.trim() || !currentUserId || !memberNumber) return;
 
-    setSending(true);
+  setSending(true);
 
-    try {
-      const { error } = await supabase
-        .from('messages')
-        .insert({
-          user_id: currentUserId,
-          member_number: memberNumber,
-          message: inputMessage.trim()
-        });
+  try {
+    const { error } = await supabase
+      .from('messages')
+      .insert({
+        user_id: currentUserId,
+        member_number: memberNumber,  // ✅ Salva il numero direttamente!
+        message: inputMessage.trim()
+      });
 
-      if (error) throw error;
+    if (error) throw error;
 
-      setInputMessage('');
-    } catch (err) {
-      console.error('Error sending message:', err);
-      alert('Errore durante invio messaggio');
-    } finally {
-      setSending(false);
-    }
-  };
+    setInputMessage('');
+  } catch (err) {
+    console.error('Error sending message:', err);
+    alert('Errore durante invio messaggio');
+  } finally {
+    setSending(false);
+  }
+};
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
